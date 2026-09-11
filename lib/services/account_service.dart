@@ -45,11 +45,16 @@ class AccountService extends ChangeNotifier {
   String? get displayName => user?.displayName;
   String? get photoUrl => user?.photoURL;
 
+  /// How long to wait on Firebase before deciding the app runs without it.
+  static const Duration _startupTimeout = Duration(seconds: 15);
+
   /// Brings Firebase up. Safe to call when it is not configured.
   Future<void> init({PrayerStore? store}) async {
     try {
       if (_injectedAuth == null && Firebase.apps.isEmpty) {
-        await Firebase.initializeApp();
+        // A bounded wait: an unreachable Firebase should cost the account, not
+        // the app.
+        await Firebase.initializeApp().timeout(_startupTimeout);
       }
       _auth = _injectedAuth ?? FirebaseAuth.instance;
       _firestore = _injectedFirestore ?? FirebaseFirestore.instance;

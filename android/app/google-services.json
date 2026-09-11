@@ -12,7 +12,20 @@
           "package_name": "com.emadosama.prayer_sheet"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "61105240264-2smf6rq8n8pcsjpjqf0ktas8ptbdtkbn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.emadosama.prayer_sheet",
+            "certificate_hash": "6a8a89aba2b4974d2e5198d1a18ec9d1aede9eee"
+          }
+        },
+        {
+          "client_id": "61105240264-t11mepu8d55e09v75aa91qeqnf6ji0c0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCxxv8IyX1WDWEYBI2b-JY5dUaEdKseyy4"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "61105240264-t11mepu8d55e09v75aa91qeqnf6ji0c0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

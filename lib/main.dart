@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -19,11 +21,14 @@ Future<void> main() async {
   await reminders.init();
 
   final account = AccountService();
-  await account.init(store: store);
-
   runApp(
     PrayerSheetApp(store: store, reminders: reminders, account: account),
   );
+
+  // Behind the first frame, never in front of it. Signing in is an extra; a
+  // slow or unreachable Firebase must not hold the app on a blank screen, and
+  // the log works perfectly well without an account.
+  unawaited(account.init(store: store));
 }
 
 class PrayerSheetApp extends StatefulWidget {
