@@ -53,6 +53,12 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.release
+            // Without these the shrinker breaks the notification plugin's
+            // storage; see proguard-rules.pro.
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }

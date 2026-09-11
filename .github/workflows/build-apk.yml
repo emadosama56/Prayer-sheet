@@ -77,6 +77,18 @@ jobs:
           print('ok: audio packaged as', wavs)
           EOF
 
+      # R8 stripping this plugin's classes is what silently broke every
+      # scheduled reminder, and it only showed up on a phone.
+      - name: Check the shrinker left the notification plugin alone
+        run: |
+          set -euo pipefail
+          if ! unzip -p dist/prayer-sheet.apk 'classes*.dex' \
+               | grep -qa 'com/dexterous/flutterlocalnotifications'; then
+            echo "::error::the notification plugin was stripped or obfuscated"
+            exit 1
+          fi
+          echo "ok: notification plugin classes are intact"
+
       - uses: actions/upload-artifact@v4
         with:
           name: prayer-sheet-apk
