@@ -54,17 +54,16 @@ jobs:
       - name: Check the runtime-only resources survived shrinking
         run: |
           set -euo pipefail
-          for res in \
-            android/app/src/main/res/raw/soft_chime.wav \
-            android/app/src/main/res/drawable-xxxhdpi/ic_stat_reminder.png
-          do
-            size=$(stat -c%s "$res")
-            # Shrinking renames resources, so match on the uncompressed size.
-            if ! unzip -l dist/prayer-sheet.apk | awk -v s="$size" '$1 == s { found = 1 } END { exit !found }'; then
-              echo "::error::$res ($size bytes) is missing from the APK"
+          AAPT2=$(ls -d "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
+          # Match on resource name, not file size: shrinking renames the
+          # packaged files and AGP recompresses PNGs, so sizes do not survive.
+          "$AAPT2" dump resources dist/prayer-sheet.apk > /tmp/res.txt
+          for name in raw/soft_chime drawable/ic_stat_reminder; do
+            if ! grep -q "$name" /tmp/res.txt; then
+              echo "::error::$name is missing from the APK"
               exit 1
             fi
-            echo "ok: $res ($size bytes)"
+            echo "ok: $name"
           done
 
       - uses: actions/upload-artifact@v4
