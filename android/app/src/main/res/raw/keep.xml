@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Both of these are looked up by name at runtime from Dart, so no Java or
+  Kotlin code ever mentions their R ids. The resource shrinker therefore sees
+  them as unused and strips them: the chime and the status bar icon were both
+  missing from the v2 and v3 APKs because of this.
+-->
+<resources
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@raw/soft_chime,@drawable/ic_stat_reminder" />
