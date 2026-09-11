@@ -77,17 +77,24 @@ jobs:
           print('ok: audio packaged as', wavs)
           EOF
 
-      # R8 stripping this plugin's classes is what silently broke every
-      # scheduled reminder, and it only showed up on a phone.
-      - name: Check the shrinker left the notification plugin alone
+      # The shrinker dropping Gson's TypeToken is what silently broke every
+      # scheduled reminder, and it only showed up on a phone. The plugin's own
+      # classes survived either way, so they are not the thing to check: the
+      # build that was broken and the build that works differ exactly here.
+      - name: Check the shrinker kept what the schedule needs
         run: |
           set -euo pipefail
-          if ! unzip -p dist/prayer-sheet.apk 'classes*.dex' \
-               | grep -qa 'com/dexterous/flutterlocalnotifications'; then
-            echo "::error::the notification plugin was stripped or obfuscated"
-            exit 1
-          fi
-          echo "ok: notification plugin classes are intact"
+          DEX=$(unzip -p dist/prayer-sheet.apk 'classes*.dex' | tr -c '[:print:]' '\n')
+          for symbol in \
+            com/dexterous/flutterlocalnotifications \
+            com/google/gson/reflect/TypeToken
+          do
+            if ! grep -qa "$symbol" <<< "$DEX"; then
+              echo "::error::$symbol was stripped; scheduled reminders cannot persist"
+              exit 1
+            fi
+            echo "ok: $symbol"
+          done
 
       - uses: actions/upload-artifact@v4
         with:
