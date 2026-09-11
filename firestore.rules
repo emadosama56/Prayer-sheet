@@ -1,0 +1,12 @@
+rules_version = '2';
+
+// Each person's prayer log is theirs alone: readable and writable only while
+// signed in as that account, and never by anyone else.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    // Anything not matched above is closed by default.
+  }
+}

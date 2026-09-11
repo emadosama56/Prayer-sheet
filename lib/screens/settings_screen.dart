@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 
 import '../main.dart';
 import '../services/reminder_service.dart';
@@ -26,6 +27,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: <Widget>[
+          const _Heading('حسابك'),
+          const _AccountCard(),
+          const SizedBox(height: 20),
           const _Heading('التذكير'),
           _Card(
             children: <Widget>[
@@ -55,8 +59,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ? Icons.volume_up_outlined
                       : Icons.volume_off_outlined,
                 ),
-                onChanged:
-                    isOn ? (bool v) => reminders.setSoundOn(v, store: store) : null,
+                onChanged: isOn
+                    ? (bool v) => reminders.setSoundOn(v, store: store)
+                    : null,
               ),
               const Divider(height: 1),
               SwitchListTile(
@@ -214,6 +219,127 @@ class _Card extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(children: children),
+    );
+  }
+}
+
+/// Signing in with Google, and what the sync is doing.
+class _AccountCard extends StatelessWidget {
+  const _AccountCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final account = AccountScope.of(context);
+    final store = PrayerScope.of(context);
+
+    if (!account.isAvailable) {
+      return _Card(
+        children: <Widget>[
+          ListTile(
+            leading: const Icon(Icons.cloud_off_outlined),
+            title: const Text('الحفظ على حسابك مش متاح'),
+            subtitle: Text(
+              'سجلك محفوظ على الموبايل وبيترجع لو نزّلت التطبيق تاني.',
+              style: theme.textTheme.bodySmall,
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (!account.isSignedIn) {
+      return _Card(
+        children: <Widget>[
+          const ListTile(
+            leading: Icon(Icons.account_circle_outlined),
+            title: Text('تسجيل الدخول بحساب جوجل'),
+            subtitle: Text(
+              'سجلك يتحفظ على حسابك ويرجع على أي موبايل تدخل منه',
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: FilledButton.icon(
+              onPressed: account.isBusy
+                  ? null
+                  : () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final ok = await account.signIn(store);
+                      if (!ok && account.error != null) {
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content:
+                                Text('مقدرتش أسجّل دخولك: ${account.error}'),
+                          ),
+                        );
+                      }
+                    },
+              icon: account.isBusy
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.login),
+              label: Text(account.isBusy ? 'جاري الدخول…' : 'دخول بجوجل'),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return _Card(
+      children: <Widget>[
+        ListTile(
+          leading: CircleAvatar(
+            backgroundColor: scheme.primaryContainer,
+            backgroundImage: account.photoUrl == null
+                ? null
+                : NetworkImage(account.photoUrl!),
+            child: account.photoUrl == null
+                ? Icon(Icons.person, color: scheme.onPrimaryContainer)
+                : null,
+          ),
+          title: Text(account.displayName ?? 'حسابك'),
+          subtitle: Text(account.email ?? ''),
+        ),
+        const Divider(height: 1),
+        ListTile(
+          leading: const Icon(Icons.cloud_done_outlined),
+          title: Text(
+            account.lastSyncedAt == null
+                ? 'لسه ما زامنش'
+                : 'آخر حفظ ${DateFormat.jm('ar').format(account.lastSyncedAt!)}',
+          ),
+          subtitle: account.error == null
+              ? const Text('سجلك بيتحفظ على حسابك تلقائي')
+              : Text(
+                  account.error!,
+                  style: TextStyle(color: scheme.error),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+          trailing: account.isBusy
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : IconButton(
+                  tooltip: 'زامن دلوقتي',
+                  icon: const Icon(Icons.sync),
+                  onPressed: () => account.sync(store),
+                ),
+        ),
+        const Divider(height: 1),
+        ListTile(
+          leading: Icon(Icons.logout, color: scheme.error),
+          title: Text('تسجيل الخروج', style: TextStyle(color: scheme.error)),
+          onTap: account.isBusy ? null : () => account.signOut(),
+        ),
+      ],
     );
   }
 }

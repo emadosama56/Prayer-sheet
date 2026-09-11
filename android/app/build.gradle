@@ -3,9 +3,23 @@ plugins {
     id "kotlin-android"
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
+    id "com.google.gms.google-services"
 }
 
 android {
+    signingConfigs {
+        // A fixed key, so the SHA-1 Google Sign-In is registered against stays
+        // the same across machines and CI runs. It carries Android's public
+        // debug credentials on purpose: it is not a secret, and it is not an
+        // upload key for the Play Store.
+        release {
+            storeFile = file("prayer-sheet.keystore")
+            storePassword = "android"
+            keyAlias = "prayersheet"
+            keyPassword = "android"
+        }
+    }
+
     namespace = "com.emadosama.prayer_sheet"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
@@ -36,9 +50,7 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            signingConfig = signingConfigs.release
         }
     }
 }

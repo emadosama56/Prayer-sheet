@@ -157,6 +157,48 @@ class PrayerStore extends ChangeNotifier {
     return streak;
   }
 
+  /// The whole log as plain JSON, for backup or upload.
+  Map<String, dynamic> exportRecords() => <String, dynamic>{
+        for (final entry in _records.entries) entry.key: entry.value.toJson(),
+      };
+
+  /// Folds another device's log into this one.
+  ///
+  /// Days and prayers are unioned rather than overwritten, and the earlier
+  /// timestamp wins for a prayer both sides logged. Two phones can then be
+  /// merged in either direction without either losing a day.
+  Future<void> mergeRecords(Map<String, dynamic> incoming) async {
+    var changed = false;
+
+    incoming.forEach((dateKey, value) {
+      if (value is! Map) return;
+      final remote = DayRecord.fromJson(
+        dateKey,
+        value.map((key, v) => MapEntry(key.toString(), v)),
+      );
+      if (remote.isEmpty) return;
+
+      final local = _records[dateKey];
+      if (local == null) {
+        _records[dateKey] = remote;
+        changed = true;
+        return;
+      }
+
+      remote.markedAt.forEach((prayer, at) {
+        final mine = local.markedAt[prayer];
+        if (mine == null || at.isBefore(mine)) {
+          local.markedAt[prayer] = at;
+          changed = true;
+        }
+      });
+    });
+
+    if (!changed) return;
+    notifyListeners();
+    await _persist();
+  }
+
   Future<void> _persist() async {
     final prefs = _prefs;
     if (prefs == null) return;

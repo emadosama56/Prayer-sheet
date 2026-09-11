@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:prayer_sheet/main.dart';
 import 'package:prayer_sheet/models/prayer.dart';
+import 'package:prayer_sheet/services/account_service.dart';
 import 'package:prayer_sheet/services/prayer_store.dart';
 import 'package:prayer_sheet/services/reminder_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -38,8 +39,12 @@ void main() {
     await store.load();
     final reminders = ReminderService();
     await reminders.init();
+    // Firebase is not configured under test, so the account service reports
+    // itself unavailable and the app runs entirely on the device's own log.
+    final account = AccountService();
+    await account.init(store: store);
     await tester.pumpWidget(
-      PrayerSheetApp(store: store, reminders: reminders),
+      PrayerSheetApp(store: store, reminders: reminders, account: account),
     );
     await tester.pumpAndSettle();
     return store;

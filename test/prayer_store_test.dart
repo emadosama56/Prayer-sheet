@@ -181,6 +181,108 @@ void main() {
     expect(store.totalPrayers, Prayer.values.length + 1);
   });
 
+  group('merging another device', () {
+    test('days only the other device has are taken on', () async {
+      final store = await loadedStore();
+      final day = DateTime(2026, 3, 10);
+      await store.toggle(day, Prayer.fajr);
+
+      final other = DateTime(2026, 3, 11);
+      await store.mergeRecords(<String, dynamic>{
+        dateKeyOf(other): <String, dynamic>{
+          'isha': DateTime(2026, 3, 11, 19).toIso8601String(),
+        },
+      });
+
+      expect(store.isDone(day, Prayer.fajr), isTrue);
+      expect(store.isDone(other, Prayer.isha), isTrue);
+    });
+
+    test('prayers are unioned, so neither side loses a day', () async {
+      final store = await loadedStore();
+      final day = DateTime(2026, 3, 10);
+      await store.toggle(day, Prayer.fajr);
+
+      await store.mergeRecords(<String, dynamic>{
+        dateKeyOf(day): <String, dynamic>{
+          'asr': DateTime(2026, 3, 10, 15).toIso8601String(),
+        },
+      });
+
+      expect(store.recordFor(day).doneCount, 2);
+      expect(store.isDone(day, Prayer.fajr), isTrue);
+      expect(store.isDone(day, Prayer.asr), isTrue);
+    });
+
+    test('the earlier timestamp wins when both sides logged it', () async {
+      final store = await loadedStore();
+      final day = DateTime(2026, 3, 10);
+      await store.toggle(day, Prayer.dhuhr);
+
+      final earlier = DateTime(2020, 1, 1, 12);
+      await store.mergeRecords(<String, dynamic>{
+        dateKeyOf(day): <String, dynamic>{'dhuhr': earlier.toIso8601String()},
+      });
+
+      expect(store.recordFor(day).timeOf(Prayer.dhuhr), earlier);
+    });
+
+    test('a later timestamp does not overwrite an earlier one', () async {
+      final store = await loadedStore();
+      final day = DateTime(2026, 3, 10);
+      await store.toggle(day, Prayer.dhuhr);
+      final mine = store.recordFor(day).timeOf(Prayer.dhuhr);
+
+      await store.mergeRecords(<String, dynamic>{
+        dateKeyOf(day): <String, dynamic>{
+          'dhuhr': DateTime(2030, 1, 1).toIso8601String(),
+        },
+      });
+
+      expect(store.recordFor(day).timeOf(Prayer.dhuhr), mine);
+    });
+
+    test('merging survives a reload', () async {
+      final day = DateTime(2026, 3, 10);
+      final store = await loadedStore();
+      await store.mergeRecords(<String, dynamic>{
+        dateKeyOf(day): <String, dynamic>{
+          'maghrib': DateTime(2026, 3, 10, 18).toIso8601String(),
+        },
+      });
+
+      expect((await loadedStore()).isDone(day, Prayer.maghrib), isTrue);
+    });
+
+    test('rubbish from the server is ignored, not crashed on', () async {
+      final store = await loadedStore();
+      final day = DateTime(2026, 3, 10);
+      await store.markAll(day);
+
+      await store.mergeRecords(<String, dynamic>{
+        'not-a-date': 'nonsense',
+        dateKeyOf(day): 42,
+        '2026-03-11': <String, dynamic>{'not_a_prayer': 'whenever'},
+      });
+
+      expect(store.recordFor(day).isComplete, isTrue);
+      expect(store.history().length, 1);
+    });
+
+    test('exported records round trip back through a merge', () async {
+      final store = await loadedStore();
+      final day = DateTime(2026, 3, 10);
+      await store.markAll(day);
+      final exported = store.exportRecords();
+
+      final fresh = await loadedStore();
+      await fresh.mergeRecords(exported);
+
+      expect(fresh.recordFor(day).isComplete, isTrue);
+      expect(fresh.totalPrayers, store.totalPrayers);
+    });
+  });
+
   test('corrupt stored data does not crash the app', () async {
     SharedPreferences.setMockInitialValues(
       <String, Object>{'prayer_records_v1': 'not json at all'},

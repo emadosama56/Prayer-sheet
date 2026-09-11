@@ -20,6 +20,20 @@ class FakeNotificationPlatform {
 
   static const MethodChannel _channel =
       MethodChannel('dexterous.com/flutter/local_notifications');
+
+  /// Firebase is not configured under test. Refusing these keeps startup from
+  /// hanging on channels nothing will ever answer, and lets the account
+  /// service report itself unavailable, as it would on a build with no
+  /// google-services.json. firebase_core talks over Pigeon, so the names are
+  /// the generated ones rather than a plain plugin channel.
+  static const List<String> _firebaseChannels = <String>[
+    'dev.flutter.pigeon.firebase_core_platform_interface'
+        '.FirebaseCoreHostApi.initializeCore',
+    'dev.flutter.pigeon.firebase_core_platform_interface'
+        '.FirebaseCoreHostApi.initializeApp',
+    'dev.flutter.pigeon.firebase_core_platform_interface'
+        '.FirebaseCoreHostApi.optionsFromResource',
+  ];
   // The reminder service also asks these two for the device's timezone and
   // location, and they hang the same way if left unanswered.
   static const MethodChannel _timezoneChannel =
@@ -30,6 +44,8 @@ class FakeNotificationPlatform {
   void install() {
     final messenger =
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+
+    _installFirebaseRefusal();
 
     messenger.setMockMethodCallHandler(_channel, (MethodCall call) async {
       calls.add(call);
@@ -67,6 +83,18 @@ class FakeNotificationPlatform {
       (MethodCall call) async =>
           call.method == 'isLocationServiceEnabled' ? false : null,
     );
+  }
+
+  void _installFirebaseRefusal() {
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    for (final name in _firebaseChannels) {
+      messenger.setMockMessageHandler(name, (ByteData? message) async {
+        // An empty reply is read as a channel error, which surfaces in Dart as
+        // an exception rather than a wait that never ends.
+        return null;
+      });
+    }
   }
 
   void remove() {

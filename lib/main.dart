@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'screens/home_screen.dart';
+import 'services/account_service.dart';
 import 'services/prayer_store.dart';
 import 'services/reminder_service.dart';
 import 'theme.dart';
@@ -17,7 +18,12 @@ Future<void> main() async {
   final reminders = ReminderService();
   await reminders.init();
 
-  runApp(PrayerSheetApp(store: store, reminders: reminders));
+  final account = AccountService();
+  await account.init(store: store);
+
+  runApp(
+    PrayerSheetApp(store: store, reminders: reminders, account: account),
+  );
 }
 
 class PrayerSheetApp extends StatefulWidget {
@@ -25,10 +31,12 @@ class PrayerSheetApp extends StatefulWidget {
     super.key,
     required this.store,
     required this.reminders,
+    required this.account,
   });
 
   final PrayerStore store;
   final ReminderService reminders;
+  final AccountService account;
 
   @override
   State<PrayerSheetApp> createState() => _PrayerSheetAppState();
@@ -41,13 +49,21 @@ class _PrayerSheetAppState extends State<PrayerSheetApp> {
     // A notification handed to the OS cannot change its mind later, so the
     // whole schedule is rebuilt whenever the log does.
     widget.store.addListener(_rescheduleReminders);
+    widget.store.addListener(_syncAccount);
     _rescheduleReminders();
   }
 
   @override
   void dispose() {
     widget.store.removeListener(_rescheduleReminders);
+    widget.store.removeListener(_syncAccount);
     super.dispose();
+  }
+
+  /// Pushes a changed log up, when there is an account to push it to.
+  void _syncAccount() {
+    if (!widget.account.isSignedIn) return;
+    widget.account.sync(widget.store);
   }
 
   void _rescheduleReminders() {
@@ -59,23 +75,26 @@ class _PrayerSheetAppState extends State<PrayerSheetApp> {
   Widget build(BuildContext context) {
     final store = widget.store;
     final reminders = widget.reminders;
-    return ReminderScope(
-      service: reminders,
-      child: PrayerScope(
-        store: store,
-        child: MaterialApp(
-          title: 'سجل الصلاة',
-          debugShowCheckedModeBanner: false,
-          theme: buildTheme(Brightness.light),
-          darkTheme: buildTheme(Brightness.dark),
-          locale: const Locale('ar'),
-          supportedLocales: const <Locale>[Locale('ar'), Locale('en')],
-          localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          home: const HomeScreen(),
+    return AccountScope(
+      service: widget.account,
+      child: ReminderScope(
+        service: reminders,
+        child: PrayerScope(
+          store: store,
+          child: MaterialApp(
+            title: 'سجل الصلاة',
+            debugShowCheckedModeBanner: false,
+            theme: buildTheme(Brightness.light),
+            darkTheme: buildTheme(Brightness.dark),
+            locale: const Locale('ar'),
+            supportedLocales: const <Locale>[Locale('ar'), Locale('en')],
+            localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: const HomeScreen(),
+          ),
         ),
       ),
     );
@@ -92,6 +111,21 @@ class PrayerScope extends InheritedNotifier<PrayerStore> {
   static PrayerStore of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<PrayerScope>();
     assert(scope?.notifier != null, 'No PrayerScope found in the widget tree');
+    return scope!.notifier!;
+  }
+}
+
+/// Same idea as [PrayerScope], for the signed-in account.
+class AccountScope extends InheritedNotifier<AccountService> {
+  const AccountScope({
+    super.key,
+    required AccountService service,
+    required super.child,
+  }) : super(notifier: service);
+
+  static AccountService of(BuildContext context) {
+    final scope = context.dependOnInheritedWidgetOfExactType<AccountScope>();
+    assert(scope?.notifier != null, 'No AccountScope in the widget tree');
     return scope!.notifier!;
   }
 }

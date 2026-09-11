@@ -11,3 +11,9 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# This one is deliberate. It carries Android's public debug credentials, so it
+# is not a secret, and it exists only so the SHA-1 that Google Sign-In is
+# registered against stays the same on every machine and CI run. It is NOT an
+# upload key: publishing on Play needs a real, private one that never lands here.
+!/app/prayer-sheet.keystore

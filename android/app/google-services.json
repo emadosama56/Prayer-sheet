@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "61105240264",
+    "project_id": "prayer-sheet-956d0",
+    "storage_bucket": "prayer-sheet-956d0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:61105240264:android:0d7649009182422d050dfd",
+        "android_client_info": {
+          "package_name": "com.emadosama.prayer_sheet"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCxxv8IyX1WDWEYBI2b-JY5dUaEdKseyy4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
