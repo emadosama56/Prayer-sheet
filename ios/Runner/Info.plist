@@ -24,6 +24,15 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>يُستخدم موقعك لحساب مواعيد الصلاة في مدينتك.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>يُستخدم موقعك لحساب مواعيد الصلاة في مدينتك.</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>ar</string>
+		<string>en</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

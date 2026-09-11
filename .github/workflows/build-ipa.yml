@@ -1,0 +1,79 @@
+# Builds the iPhone app. Entirely separate from the Android workflow so that
+# nothing here can affect the APK.
+name: Build IPA
+
+on:
+  push:
+    branches: [claude/flutter-prayer-tracker-app-lphdde, main]
+    paths:
+      - 'lib/**'
+      - 'ios/**'
+      - 'pubspec.yaml'
+      - 'tool/ios_google_url_scheme.py'
+      - '.github/workflows/build-ipa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-ipa
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # Xcode only runs on macOS.
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.24.5
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+      - name: Add the Google sign-in URL scheme
+        run: python3 tool/ios_google_url_scheme.py
+
+      # Unsigned: signing needs a paid Apple account, and the app is signed on
+      # the way onto the phone instead.
+      - name: Build the app
+        run: flutter build ios --release --no-codesign
+
+      - name: Package it as an ipa
+        id: ipa
+        run: |
+          set -euo pipefail
+          BUILD=$(grep -m1 '^version:' pubspec.yaml | sed -E 's/.*\+([0-9]+).*/\1/')
+          echo "version=v$BUILD" >> "$GITHUB_OUTPUT"
+          mkdir -p Payload
+          cp -R build/ios/iphoneos/Runner.app Payload/
+          mkdir -p dist
+          zip -qry "dist/prayer-sheet-v$BUILD.ipa" Payload
+          ls -lh dist
+
+      - name: Check the chime was bundled
+        run: |
+          set -euo pipefail
+          if [ ! -f build/ios/iphoneos/Runner.app/soft_chime.wav ]; then
+            echo "::error::the notification sound is missing from the app bundle"
+            exit 1
+          fi
+          echo "ok: soft_chime.wav is in the bundle"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prayer-sheet-ipa
+          path: dist/*.ipa
+
+      - name: Publish alongside the Android build
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ipa.outputs.version }}
+          files: dist/*.ipa
+          fail_on_unmatched_files: true

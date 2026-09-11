@@ -2,7 +2,7 @@ name: prayer_sheet
 description: "سجل الصلاة — تطبيق بسيط لتسجيل الصلوات الخمس ومتابعة سجل الأيام السابقة."
 publish_to: 'none'
 
-version: 1.7.0+13
+version: 1.7.1+14
 
 environment:
   sdk: ^3.5.4
