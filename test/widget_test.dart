@@ -111,7 +111,8 @@ void main() {
     await tester.tap(reminderSwitch);
     await tester.pumpAndSettle();
     expect(tester.widget<SwitchListTile>(reminderSwitch).value, isTrue);
-    expect(notifications.hasCallTo('periodicallyShowWithDuration'), isTrue);
+    // The default mode schedules around the prayer times, not on a fixed loop.
+    expect(notifications.hasCallTo('zonedSchedule'), isTrue);
 
     final soundSwitch = find.widgetWithText(SwitchListTile, 'صوت التذكير');
     expect(tester.widget<SwitchListTile>(soundSwitch).value, isTrue);

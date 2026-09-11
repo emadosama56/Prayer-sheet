@@ -11,10 +11,18 @@ class FakeNotificationPlatform {
 
   static const MethodChannel _channel =
       MethodChannel('dexterous.com/flutter/local_notifications');
+  // The reminder service also asks these two for the device's timezone and
+  // location, and they hang the same way if left unanswered.
+  static const MethodChannel _timezoneChannel =
+      MethodChannel('flutter_timezone');
+  static const MethodChannel _geolocatorChannel =
+      MethodChannel('flutter.baseflow.com/geolocator');
 
   void install() {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(_channel, (MethodCall call) async {
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+
+    messenger.setMockMethodCallHandler(_channel, (MethodCall call) async {
       calls.add(call);
       switch (call.method) {
         case 'initialize':
@@ -25,11 +33,26 @@ class FakeNotificationPlatform {
           return null;
       }
     });
+
+    messenger.setMockMethodCallHandler(
+      _timezoneChannel,
+      (MethodCall call) async => 'UTC',
+    );
+    // Reporting location services as off sends the service down its network
+    // and default fallbacks, which need no plugin at all.
+    messenger.setMockMethodCallHandler(
+      _geolocatorChannel,
+      (MethodCall call) async =>
+          call.method == 'isLocationServiceEnabled' ? false : null,
+    );
   }
 
   void remove() {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(_channel, null);
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(_channel, null);
+    messenger.setMockMethodCallHandler(_timezoneChannel, null);
+    messenger.setMockMethodCallHandler(_geolocatorChannel, null);
   }
 
   void reset() => calls.clear();

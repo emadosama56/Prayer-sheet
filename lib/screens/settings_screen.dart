@@ -4,27 +4,29 @@ import '../main.dart';
 import '../services/reminder_service.dart';
 
 /// Everything the user can turn on and off.
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool _isLocating = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final reminders = ReminderScope.of(context);
+    final store = PrayerScope.of(context);
+    final isOn = reminders.isEnabled && reminders.isSupported;
 
     return Scaffold(
       appBar: AppBar(title: const Text('الإعدادات')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: <Widget>[
-          Text(
-            'التذكير',
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
+          const _Heading('التذكير'),
           _Card(
             children: <Widget>[
               SwitchListTile(
@@ -32,12 +34,12 @@ class SettingsScreen extends StatelessWidget {
                 title: const Text('تشغيل التذكير'),
                 subtitle: Text(
                   reminders.isSupported
-                      ? 'تذكير كل ساعتين تسجّل صلاتك'
+                      ? 'إشعارات تفكرك تسجّل صلاتك'
                       : 'التذكير مش مدعوم على الجهاز ده',
                 ),
                 secondary: const Icon(Icons.notifications_outlined),
                 onChanged: reminders.isSupported
-                    ? (bool value) => _toggle(context, reminders, value)
+                    ? (bool value) => _toggle(context, value)
                     : null,
               ),
               const Divider(height: 1),
@@ -52,33 +54,118 @@ class SettingsScreen extends StatelessWidget {
                       ? Icons.volume_up_outlined
                       : Icons.volume_off_outlined,
                 ),
-                onChanged: reminders.isSupported
-                    ? (bool value) => reminders.setSoundOn(value)
+                onChanged:
+                    isOn ? (bool v) => reminders.setSoundOn(v, store: store) : null,
+              ),
+              const Divider(height: 1),
+              SwitchListTile(
+                value: reminders.quietHoursEnabled,
+                title: const Text('السكوت بالليل'),
+                subtitle: const Text('مفيش إشعارات من ١١ بالليل لـ ٦ الصبح'),
+                secondary: const Icon(Icons.bedtime_outlined),
+                onChanged: isOn
+                    ? (bool v) =>
+                        reminders.setQuietHoursEnabled(v, store: store)
                     : null,
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            'لو قفلت التذكير مش هيجيلك أي إشعار خالص.',
-            style: theme.textTheme.bodySmall,
+          const SizedBox(height: 20),
+          const _Heading('طريقة التذكير'),
+          _Card(
+            children: <Widget>[
+              RadioListTile<ReminderMode>(
+                value: ReminderMode.smart,
+                groupValue: reminders.mode,
+                title: const Text('ذكي (حسب مواعيد الصلاة)'),
+                subtitle: const Text(
+                  'قبل كل صلاة بنص ساعة لو الى قبلها مش مسجلة، وبعد كل صلاة '
+                  'بنص ساعة لو لسه ما سجلتهاش. ولو سجّلت اليوم كله يسكت لبكرة.',
+                ),
+                onChanged:
+                    isOn ? (ReminderMode? m) => _setMode(reminders, m) : null,
+              ),
+              const Divider(height: 1),
+              RadioListTile<ReminderMode>(
+                value: ReminderMode.everyTwoHours,
+                groupValue: reminders.mode,
+                title: const Text('كل ساعتين'),
+                subtitle: const Text('تذكير ثابت من غير مواعيد ولا موقع'),
+                onChanged:
+                    isOn ? (ReminderMode? m) => _setMode(reminders, m) : null,
+              ),
+            ],
           ),
+          if (reminders.mode == ReminderMode.smart) ...<Widget>[
+            const SizedBox(height: 20),
+            const _Heading('الموقع'),
+            _Card(
+              children: <Widget>[
+                ListTile(
+                  leading: const Icon(Icons.place_outlined),
+                  title: Text(reminders.place?.label ?? 'لسه ما اتحددش'),
+                  subtitle: const Text(
+                    'مواعيد الصلاة بتتحسب على الجهاز حسب المكان ده',
+                  ),
+                  trailing: _isLocating
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : IconButton(
+                          tooltip: 'تحديث الموقع',
+                          icon: const Icon(Icons.my_location),
+                          onPressed: () => _refreshLocation(reminders),
+                        ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'بيجرب الـ GPS الأول، ولو مرفوض بيحدد المدينة من الإنترنت.',
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Future<void> _toggle(
-    BuildContext context,
-    ReminderService reminders,
-    bool wanted,
-  ) async {
+  Future<void> _setMode(ReminderService reminders, ReminderMode? mode) async {
+    if (mode == null) return;
+    await reminders.setMode(mode, store: PrayerScope.of(context));
+  }
+
+  Future<void> _refreshLocation(ReminderService reminders) async {
+    setState(() => _isLocating = true);
     final messenger = ScaffoldMessenger.of(context);
-    final result = await reminders.setEnabled(wanted);
+    final store = PrayerScope.of(context);
+    final place = await reminders.refreshLocation(store: store);
+    if (!mounted) return;
+    setState(() => _isLocating = false);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          place.isDefault
+              ? 'مقدرتش أحدد الموقع — بستخدم القاهرة مؤقتاً'
+              : 'الموقع اتحدث: ${place.label}',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _toggle(BuildContext context, bool wanted) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final reminders = ReminderScope.of(context);
+    final result = await reminders.setEnabled(
+      wanted,
+      store: PrayerScope.of(context),
+    );
 
     final String message;
     if (result) {
-      message = 'هيجيلك تذكير كل ساعتين 🙏';
+      message = 'التذكير اشتغل 🙏';
     } else if (wanted) {
       // Asked for it, but the OS permission was refused.
       message = 'التذكير محتاج إذن الإشعارات من إعدادات الموبايل';
@@ -86,6 +173,27 @@ class SettingsScreen extends StatelessWidget {
       message = 'تم إيقاف التذكير';
     }
     messenger.showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+class _Heading extends StatelessWidget {
+  const _Heading(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        text,
+        style: theme.textTheme.titleSmall?.copyWith(
+          color: theme.colorScheme.primary,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
   }
 }
 

@@ -4,6 +4,13 @@
     <!-- Lets the plugin re-arm the repeating reminder after a reboot. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
+    <!-- Flutter only adds INTERNET to the debug manifest, but the release
+         build needs it for the coarse location lookup. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Optional: prayer times fall back to a network lookup, then to Cairo,
+         if the user would rather not share their location. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 
     <application
         android:label="سجل الصلاة"

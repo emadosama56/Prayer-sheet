@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:prayer_sheet/services/reminder_service.dart';
+import 'package:prayer_sheet/models/prayer.dart';
+import 'package:prayer_sheet/services/prayer_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/fake_notification_platform.dart';
@@ -21,6 +24,9 @@ void main() {
   Future<ReminderService> loaded() async {
     final service = ReminderService();
     await service.init();
+    // Without a store the service falls back to the plain repeating nudge,
+    // which is what these tests exercise; the smart rules have their own file.
+    await service.setMode(ReminderMode.everyTwoHours);
     return service;
   }
 
@@ -141,7 +147,113 @@ void main() {
     final second = await loaded();
 
     expect(second.isEnabled, isTrue);
-    // Re-armed on start, in case the OS dropped the schedule meanwhile.
+    // Re-armed on the next reschedule, in case the OS dropped it meanwhile.
+    await second.reschedule(null);
     expect(platform.hasCallTo('periodicallyShowWithDuration'), isTrue);
   });
+
+  group('smart mode', () {
+    Future<ReminderService> smart(PrayerStore store) async {
+      final service = ReminderService();
+      await service.init();
+      await service.setEnabled(true, store: store);
+      return service;
+    }
+
+    Future<PrayerStore> emptyStore() async {
+      final store = PrayerStore();
+      await store.load();
+      return store;
+    }
+
+    test('smart is the default and schedules at prayer times', () async {
+      final store = await emptyStore();
+      platform.reset();
+      final service = await smart(store);
+
+      expect(service.mode, ReminderMode.smart);
+      // Real times, not a blind repeat.
+      expect(platform.hasCallTo('zonedSchedule'), isTrue);
+      expect(platform.hasCallTo('periodicallyShowWithDuration'), isFalse);
+    });
+
+    test('a fully logged day leaves today with nothing pending', () async {
+      final store = await emptyStore();
+      final service = await smart(store);
+
+      final scheduledBefore = platform.calls
+          .where((c) => c.method == 'zonedSchedule')
+          .length;
+      expect(scheduledBefore, greaterThan(0));
+
+      await store.markAll(DateTime.now());
+      platform.reset();
+      await service.reschedule(store);
+
+      final today = DateTime.now();
+      final stillToday = platform.calls
+          .where((c) => c.method == 'zonedSchedule')
+          .where((c) {
+        final at = c.arguments['scheduledDateTime'] as String? ?? '';
+        return at.startsWith(
+          '${today.year}-${today.month.toString().padLeft(2, '0')}-'
+          '${today.day.toString().padLeft(2, '0')}',
+        );
+      });
+      expect(stillToday, isEmpty);
+    });
+
+    test('logging a prayer drops its reminder for today', () async {
+      final store = await emptyStore();
+      final service = await smart(store);
+
+      await store.toggle(DateTime.now(), Prayer.isha);
+      platform.reset();
+      await service.reschedule(store);
+
+      // Later days are still scheduled, so only today's is of interest.
+      final todaysTitles = platform.calls
+          .where((c) => c.method == 'zonedSchedule')
+          .where((c) => _scheduledOn(c, DateTime.now()))
+          .map((c) => c.arguments['title'] as String?)
+          .toList();
+      expect(todaysTitles.contains('دخل وقت العشاء'), isFalse);
+    });
+
+    test('nothing is ever scheduled in the past', () async {
+      final store = await emptyStore();
+      final before = DateTime.now();
+      await smart(store);
+
+      final times = platform.calls
+          .where((c) => c.method == 'zonedSchedule')
+          .map((c) =>
+              DateTime.parse(c.arguments['scheduledDateTime'] as String))
+          .toList();
+
+      expect(times, isNotEmpty);
+      for (final at in times) {
+        expect(at.isAfter(before), isTrue, reason: '\$at is not in the future');
+      }
+    });
+
+    test('switching off cancels everything that was scheduled', () async {
+      final store = await emptyStore();
+      final service = await smart(store);
+      platform.reset();
+
+      await service.setEnabled(false, store: store);
+
+      expect(platform.hasCallTo('cancel'), isTrue);
+      expect(platform.hasCallTo('zonedSchedule'), isFalse);
+    });
+  });
+}
+
+/// Whether a zonedSchedule call lands on [day]'s calendar date.
+bool _scheduledOn(MethodCall call, DateTime day) {
+  final at = call.arguments['scheduledDateTime'] as String? ?? '';
+  final prefix = '${day.year}-${day.month.toString().padLeft(2, '0')}-'
+      '${day.day.toString().padLeft(2, '0')}';
+  return at.startsWith(prefix);
 }

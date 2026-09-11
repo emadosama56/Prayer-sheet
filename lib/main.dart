@@ -20,7 +20,7 @@ Future<void> main() async {
   runApp(PrayerSheetApp(store: store, reminders: reminders));
 }
 
-class PrayerSheetApp extends StatelessWidget {
+class PrayerSheetApp extends StatefulWidget {
   const PrayerSheetApp({
     super.key,
     required this.store,
@@ -31,7 +31,34 @@ class PrayerSheetApp extends StatelessWidget {
   final ReminderService reminders;
 
   @override
+  State<PrayerSheetApp> createState() => _PrayerSheetAppState();
+}
+
+class _PrayerSheetAppState extends State<PrayerSheetApp> {
+  @override
+  void initState() {
+    super.initState();
+    // A notification handed to the OS cannot change its mind later, so the
+    // whole schedule is rebuilt whenever the log does.
+    widget.store.addListener(_rescheduleReminders);
+    _rescheduleReminders();
+  }
+
+  @override
+  void dispose() {
+    widget.store.removeListener(_rescheduleReminders);
+    super.dispose();
+  }
+
+  void _rescheduleReminders() {
+    if (!widget.reminders.isEnabled) return;
+    widget.reminders.reschedule(widget.store);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final store = widget.store;
+    final reminders = widget.reminders;
     return ReminderScope(
       service: reminders,
       child: PrayerScope(
