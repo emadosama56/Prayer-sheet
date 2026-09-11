@@ -35,7 +35,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: Text(
                   reminders.isSupported
                       ? 'إشعارات تفكرك تسجّل صلاتك'
-                      : 'التذكير مش مدعوم على الجهاز ده',
+                      : 'مقدرتش أشغّل الإشعارات: '
+                          '${reminders.setupError ?? "مش مدعومة هنا"}',
                 ),
                 secondary: const Icon(Icons.notifications_outlined),
                 onChanged: reminders.isSupported

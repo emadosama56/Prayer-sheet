@@ -65,6 +65,17 @@ jobs:
             fi
             echo "ok: $name"
           done
+          # The table naming a resource is not the same as the file being in
+          # the package, so confirm the chime is really there as audio.
+          python3 - <<'EOF'
+          import sys, zipfile
+          apk = zipfile.ZipFile('dist/prayer-sheet.apk')
+          wavs = [i.filename for i in apk.infolist()
+                  if i.file_size > 1000 and apk.read(i.filename)[:4] == b'RIFF']
+          if not wavs:
+              sys.exit('::error::no audio file is packaged in the APK')
+          print('ok: audio packaged as', wavs)
+          EOF
 
       - uses: actions/upload-artifact@v4
         with:

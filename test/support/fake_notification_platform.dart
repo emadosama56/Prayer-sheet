@@ -9,6 +9,12 @@ class FakeNotificationPlatform {
   final List<MethodCall> calls = <MethodCall>[];
   bool grantPermission = true;
 
+  /// Icons this fake refuses, standing in for a drawable the build dropped.
+  Set<String> unresolvableIcons = <String>{};
+
+  /// What the device claims its timezone is called.
+  String timeZoneName = 'UTC';
+
   static const MethodChannel _channel =
       MethodChannel('dexterous.com/flutter/local_notifications');
   // The reminder service also asks these two for the device's timezone and
@@ -26,6 +32,13 @@ class FakeNotificationPlatform {
       calls.add(call);
       switch (call.method) {
         case 'initialize':
+          final icon = call.arguments['defaultIcon'];
+          if (icon is String && unresolvableIcons.contains(icon)) {
+            throw PlatformException(
+              code: 'invalid_icon',
+              message: 'The resource \$icon could not be found',
+            );
+          }
           return true;
         case 'requestNotificationsPermission':
           return grantPermission;
@@ -36,7 +49,7 @@ class FakeNotificationPlatform {
 
     messenger.setMockMethodCallHandler(
       _timezoneChannel,
-      (MethodCall call) async => 'UTC',
+      (MethodCall call) async => timeZoneName,
     );
     // Reporting location services as off sends the service down its network
     // and default fallbacks, which need no plugin at all.

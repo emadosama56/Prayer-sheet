@@ -54,6 +54,7 @@ class ReminderService extends ChangeNotifier {
   bool _quietHoursEnabled = true;
   ReminderMode _mode = ReminderMode.smart;
   bool _isSupported = false;
+  String? _setupError;
   ResolvedLocation? _place;
 
   bool get isEnabled => _isEnabled;
@@ -63,6 +64,9 @@ class ReminderService extends ChangeNotifier {
 
   /// False where local notifications are not available (web, tests).
   bool get isSupported => _isSupported;
+
+  /// Why setup failed, when it did — worth showing rather than swallowing.
+  String? get setupError => _setupError;
 
   /// The place the prayer times are computed for, once known.
   ResolvedLocation? get place => _place;
@@ -79,33 +83,75 @@ class ReminderService extends ChangeNotifier {
         ? ReminderMode.everyTwoHours
         : ReminderMode.smart;
 
-    try {
-      tz_data.initializeTimeZones();
-      tz.setLocalLocation(
-        tz.getLocation(await FlutterTimezone.getLocalTimezone()),
-      );
-    } catch (_) {
-      // Any failure here leaves tz on UTC, which only matters on a device,
-      // where this call does work. Catching Error as well as Exception: an
-      // absent plugin surfaces as a type error on the returned null.
-    }
+    await _setUpTimeZone();
 
-    try {
-      const settings = InitializationSettings(
-        android: AndroidInitializationSettings('ic_stat_reminder'),
-        iOS: DarwinInitializationSettings(
-          requestAlertPermission: false,
-          requestSoundPermission: false,
-          requestBadgePermission: false,
-        ),
-      );
-      _isSupported = await _plugin.initialize(settings) ?? false;
-    } on Exception {
-      _isSupported = false;
-    }
+    _isSupported = await _initialisePlugin();
 
     _place = await _location.current();
     notifyListeners();
+  }
+
+  /// Points the scheduler at the device's timezone.
+  ///
+  /// Everything is scheduled on the user's wall clock, so getting this wrong
+  /// moves every reminder by the UTC offset. If the device reports a zone name
+  /// the database does not carry, fall back to any zone currently on the same
+  /// offset rather than to UTC, which would be silently hours out.
+  Future<void> _setUpTimeZone() async {
+    tz_data.initializeTimeZones();
+    try {
+      tz.setLocalLocation(
+        tz.getLocation(await FlutterTimezone.getLocalTimezone()),
+      );
+      return;
+    } catch (_) {
+      // Fall through to matching on the offset instead. Catching Error too:
+      // an absent plugin surfaces as a type error on the returned null.
+    }
+
+    final offset = DateTime.now().timeZoneOffset;
+    for (final location in tz.timeZoneDatabase.locations.values) {
+      if (tz.TZDateTime.now(location).timeZoneOffset == offset) {
+        tz.setLocalLocation(location);
+        return;
+      }
+    }
+    tz.setLocalLocation(tz.UTC);
+  }
+
+  /// Brings the plugin up, falling back to the launcher icon if the app's own
+  /// status bar icon cannot be resolved.
+  ///
+  /// A drawable that the build dropped used to fail initialisation outright and
+  /// take every reminder down with it, reported only as "not supported on this
+  /// device". An icon is not worth that, so a second attempt uses the icon
+  /// every Android app is guaranteed to have.
+  Future<bool> _initialisePlugin() async {
+    const List<String> icons = <String>[
+      'ic_stat_reminder',
+      '@mipmap/ic_launcher',
+    ];
+
+    for (final icon in icons) {
+      try {
+        final settings = InitializationSettings(
+          android: AndroidInitializationSettings(icon),
+          iOS: const DarwinInitializationSettings(
+            requestAlertPermission: false,
+            requestSoundPermission: false,
+            requestBadgePermission: false,
+          ),
+        );
+        if (await _plugin.initialize(settings) ?? false) {
+          _setupError = null;
+          return true;
+        }
+        _setupError = 'تعذّر تشغيل الإشعارات';
+      } catch (error) {
+        _setupError = '$error';
+      }
+    }
+    return false;
   }
 
   /// Turns reminders on — asking for permission first — or off.

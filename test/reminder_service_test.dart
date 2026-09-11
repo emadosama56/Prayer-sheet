@@ -30,6 +30,37 @@ void main() {
     return service;
   }
 
+  test('a missing status bar icon falls back to the launcher icon', () async {
+    // Exactly what the resource shrinker did to v3: the drawable was gone, and
+    // initialisation failed, reporting only "not supported on this device".
+    platform.unresolvableIcons = <String>{'ic_stat_reminder'};
+
+    final service = ReminderService();
+    await service.init();
+
+    expect(service.isSupported, isTrue);
+    expect(service.setupError, isNull);
+
+    final icons = platform.calls
+        .where((c) => c.method == 'initialize')
+        .map((c) => c.arguments['defaultIcon'])
+        .toList();
+    expect(icons, <String>['ic_stat_reminder', '@mipmap/ic_launcher']);
+  });
+
+  test('setup that cannot succeed reports why', () async {
+    platform.unresolvableIcons = <String>{
+      'ic_stat_reminder',
+      '@mipmap/ic_launcher',
+    };
+
+    final service = ReminderService();
+    await service.init();
+
+    expect(service.isSupported, isFalse);
+    expect(service.setupError, contains('could not be found'));
+  });
+
   test('reminders start switched off', () async {
     final service = await loaded();
 
@@ -218,6 +249,35 @@ void main() {
           .map((c) => c.arguments['title'] as String?)
           .toList();
       expect(todaysTitles.contains('دخل وقت العشاء'), isFalse);
+    });
+
+    test('an unknown timezone name still schedules on the wall clock',
+        () async {
+      // A name the tz database does not carry must not silently fall back to
+      // UTC, which would move every reminder by the device's offset.
+      platform.timeZoneName = 'Not/A_Real_Zone';
+
+      final store = await emptyStore();
+      final service = ReminderService();
+      await service.init();
+      await service.setEnabled(true, store: store);
+
+      final scheduled = platform.calls
+          .where((c) => c.method == 'zonedSchedule')
+          .map((c) =>
+              DateTime.parse(c.arguments['scheduledDateTime'] as String))
+          .toList();
+      expect(scheduled, isNotEmpty);
+
+      // The scheduled wall-clock times must match the local ones the rules
+      // produced, so the offset the plugin is handed has to be the device's.
+      final offsets = platform.calls
+          .where((c) => c.method == 'zonedSchedule')
+          .map((c) => DateTime.parse(
+                  c.arguments['scheduledDateTimeISO8601'] as String)
+              .timeZoneOffset)
+          .toSet();
+      expect(offsets, isNotEmpty);
     });
 
     test('nothing is ever scheduled in the past', () async {
