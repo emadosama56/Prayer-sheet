@@ -13,6 +13,20 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+// Some plugins — geolocator among them — read `flutter.compileSdkVersion` and
+// `flutter.minSdkVersion` from their own project, but Flutter's Gradle plugin
+// creates that extension on :app alone, and plugin projects are its siblings
+// rather than its children, so the lookup finds nothing. Hand them :app's own
+// extension, which the block above has already evaluated.
+subprojects {
+    if (project.name != "app" && !project.hasProperty("flutter")) {
+        def appFlutter = rootProject.project(":app").extensions.findByName("flutter")
+        if (appFlutter != null) {
+            project.ext.flutter = appFlutter
+        }
+    }
+}
+
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
