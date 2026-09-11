@@ -121,6 +121,29 @@ class PrayerStore extends ChangeNotifier {
 
   /// Consecutive complete days counting back from today. Today being
   /// unfinished does not break the streak — the day is not over yet.
+  /// The longest run of consecutive complete days ever recorded.
+  ///
+  /// Kept separate from [currentStreak] so a badge already earned is not taken
+  /// back the first time a day is missed.
+  int get bestStreak {
+    final days = _records.values
+        .where((record) => record.isComplete)
+        .map((record) => dayOnly(record.date))
+        .toList()
+      ..sort();
+    if (days.isEmpty) return 0;
+
+    var best = 1;
+    var run = 1;
+    for (var i = 1; i < days.length; i++) {
+      final isNextDay =
+          days[i].difference(days[i - 1]) == const Duration(days: 1);
+      run = isNextDay ? run + 1 : 1;
+      if (run > best) best = run;
+    }
+    return best;
+  }
+
   int currentStreak({DateTime? today}) {
     var cursor = dayOnly(today ?? DateTime.now());
     if (!recordFor(cursor).isComplete) {

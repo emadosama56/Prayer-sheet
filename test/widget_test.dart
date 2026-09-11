@@ -97,6 +97,29 @@ void main() {
     expect(find.text('1/5'), findsOneWidget);
   });
 
+  testWidgets('the switch flips as soon as it is tapped, not after scheduling',
+      (WidgetTester tester) async {
+    // On a phone, rescheduling waits on the GPS and then hands the OS dozens
+    // of notifications. The switch must not sit on its old value for all of
+    // that: it looks like the tap did nothing.
+    notifications.scheduleDelay = const Duration(milliseconds: 1);
+    await pumpApp(tester);
+
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+
+    final reminderSwitch = find.widgetWithText(SwitchListTile, 'تشغيل التذكير');
+    await tester.tap(reminderSwitch);
+    // One frame, nowhere near long enough for the scheduling to finish.
+    await tester.pump();
+    expect(tester.widget<SwitchListTile>(reminderSwitch).value, isTrue);
+
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('settings can turn the reminder and its sound on and off',
       (WidgetTester tester) async {
     await pumpApp(tester);

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android Auto Backup copies these to the user's own Google Drive, so the log
+  comes back when the app is reinstalled or moved to a new phone. Only the
+  prayer log and settings are included: nothing else is worth restoring.
+-->
+<full-backup-content>
+    <include domain="sharedpref" path="." />
+</full-backup-content>

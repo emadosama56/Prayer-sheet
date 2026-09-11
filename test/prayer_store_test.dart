@@ -140,6 +140,35 @@ void main() {
     expect((await loadedStore()).history(), isEmpty);
   });
 
+  test('the best streak is kept even after a day is missed', () async {
+    final store = await loadedStore();
+    final base = DateTime(2026, 3, 10);
+
+    // Three in a row, a gap, then two in a row.
+    for (final offset in <int>[0, 1, 2, 4, 5]) {
+      await store.markAll(base.add(Duration(days: offset)));
+    }
+
+    expect(store.bestStreak, 3);
+    // The current streak has moved on; the badge already earned must not be.
+    expect(store.currentStreak(today: base.add(const Duration(days: 5))), 2);
+  });
+
+  test('the best streak of an empty log is zero', () async {
+    expect((await loadedStore()).bestStreak, 0);
+  });
+
+  test('partly logged days never count towards the best streak', () async {
+    final store = await loadedStore();
+    final base = DateTime(2026, 3, 10);
+
+    await store.markAll(base);
+    await store.toggle(base.add(const Duration(days: 1)), Prayer.fajr);
+    await store.markAll(base.add(const Duration(days: 2)));
+
+    expect(store.bestStreak, 1);
+  });
+
   test('totals aggregate across days', () async {
     final store = await loadedStore();
     final today = dayOnly(DateTime.now());

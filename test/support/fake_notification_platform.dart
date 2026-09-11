@@ -15,6 +15,9 @@ class FakeNotificationPlatform {
   /// What the device claims its timezone is called.
   String timeZoneName = 'UTC';
 
+  /// Stands in for how long a real phone takes to hand the OS a schedule.
+  Duration scheduleDelay = Duration.zero;
+
   static const MethodChannel _channel =
       MethodChannel('dexterous.com/flutter/local_notifications');
   // The reminder service also asks these two for the device's timezone and
@@ -30,6 +33,12 @@ class FakeNotificationPlatform {
 
     messenger.setMockMethodCallHandler(_channel, (MethodCall call) async {
       calls.add(call);
+      // Rescheduling clears the old notifications before laying down the new
+      // ones, so slowing the clears is enough to stand in for the wait a real
+      // phone puts between the tap and the schedule being in place.
+      if (scheduleDelay > Duration.zero && call.method == 'cancel') {
+        await Future<void>.delayed(scheduleDelay);
+      }
       switch (call.method) {
         case 'initialize':
           final icon = call.arguments['defaultIcon'];

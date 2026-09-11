@@ -168,9 +168,14 @@ class ReminderService extends ChangeNotifier {
     }
 
     _isEnabled = enabled;
+    // Tell the screen straight away. Rescheduling waits on the GPS and then
+    // hands the OS dozens of notifications, which takes seconds on a phone;
+    // notifying only afterwards left the switch showing the old value for all
+    // of it, so the tap looked ignored.
+    notifyListeners();
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_enabledKey, enabled);
-
     await reschedule(store);
     notifyListeners();
     return enabled;
@@ -179,6 +184,8 @@ class ReminderService extends ChangeNotifier {
   Future<void> setSoundOn(bool withSound, {PrayerStore? store}) async {
     if (_isSoundOn == withSound) return;
     _isSoundOn = withSound;
+    notifyListeners();
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_soundKey, withSound);
     await reschedule(store);
@@ -188,6 +195,8 @@ class ReminderService extends ChangeNotifier {
   Future<void> setQuietHoursEnabled(bool enabled, {PrayerStore? store}) async {
     if (_quietHoursEnabled == enabled) return;
     _quietHoursEnabled = enabled;
+    notifyListeners();
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_quietKey, enabled);
     await reschedule(store);
@@ -197,6 +206,8 @@ class ReminderService extends ChangeNotifier {
   Future<void> setMode(ReminderMode mode, {PrayerStore? store}) async {
     if (_mode == mode) return;
     _mode = mode;
+    notifyListeners();
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_modeKey, mode.name);
     await reschedule(store);
