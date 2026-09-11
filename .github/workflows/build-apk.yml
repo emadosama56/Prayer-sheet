@@ -8,6 +8,11 @@ on:
 permissions:
   contents: write
 
+# Two runs must never race to publish the same release tag.
+concurrency:
+  group: build-apk
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest

@@ -17,7 +17,7 @@ void main() {
     // once instead of the ListView lazily skipping everything below 600px.
     final TestFlutterView view = TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
     view.devicePixelRatio = 3.0;
-    view.physicalSize = const Size(1200, 3600);
+    view.physicalSize = const Size(1200, 4200);
   });
 
   tearDown(() {
@@ -41,6 +41,14 @@ void main() {
       expect(find.text(prayer.arabicName), findsWidgets);
     }
     expect(find.text('0/5'), findsOneWidget);
+  });
+
+  testWidgets('the dua shows at the foot of the home screen',
+      (WidgetTester tester) async {
+    await pumpApp(tester);
+
+    expect(find.text('تقبل الله من عمداوى و جانجوناااا'), findsOneWidget);
+    expect(find.text('و جمعهم دايما مع بعض فى كل حاجة حلوة'), findsOneWidget);
   });
 
   testWidgets('tapping a prayer records it', (WidgetTester tester) async {

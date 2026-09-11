@@ -99,8 +99,47 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             icon: const Icon(Icons.calendar_month),
             label: const Text('عرض سجل الأيام السابقة'),
           ),
+          const SizedBox(height: 24),
+          const _Dedication(),
         ],
       ),
+    );
+  }
+}
+
+/// A small dua at the foot of the home screen.
+class _Dedication extends StatelessWidget {
+  const _Dedication();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Column(
+      children: <Widget>[
+        Divider(color: scheme.outlineVariant, height: 1),
+        const SizedBox(height: 18),
+        Icon(Icons.favorite, size: 16, color: scheme.primary.withOpacity(0.7)),
+        const SizedBox(height: 10),
+        Text(
+          'تقبل الله من عمداوى و جانجوناااا',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: scheme.primary,
+            height: 1.6,
+          ),
+        ),
+        Text(
+          'و جمعهم دايما مع بعض فى كل حاجة حلوة',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: scheme.onSurfaceVariant,
+            height: 1.6,
+          ),
+        ),
+      ],
     );
   }
 }
