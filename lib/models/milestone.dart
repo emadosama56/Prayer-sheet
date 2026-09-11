@@ -42,21 +42,21 @@ class Milestone {
     return <Milestone>[
       at(
         title: 'أول يوم كامل',
-        detail: 'تسجّل الخمس صلوات في يوم',
+        detail: 'تسجيل الصلوات الخمس في يوم',
         value: completeDays,
         target: 1,
         icon: Icons.verified_outlined,
       ),
       at(
         title: 'أسبوع متواصل',
-        detail: '٧ أيام كاملة ورا بعض',
+        detail: '٧ أيام كاملة متتالية',
         value: bestStreak,
         target: 7,
         icon: Icons.local_fire_department_outlined,
       ),
       at(
         title: 'أول شكل مكتمل',
-        detail: 'تجمع ٩ قطع وتكمّل شكل',
+        detail: 'جمع ٩ قطع لإتمام شكل',
         value: finishedMosaics,
         target: 1,
         icon: Icons.extension_outlined,
@@ -77,7 +77,7 @@ class Milestone {
       ),
       at(
         title: 'أربعين يوم',
-        detail: '٤٠ يوم متواصل من غير ما تفوّت',
+        detail: '٤٠ يومًا متتاليًا',
         value: bestStreak,
         target: 40,
         icon: Icons.emoji_events_outlined,

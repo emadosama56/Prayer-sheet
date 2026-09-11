@@ -31,8 +31,8 @@ class ReminderService extends ChangeNotifier {
 
   static const Duration everyTwoHoursInterval = Duration(hours: 2);
 
-  static const String fallbackTitle = 'سجلت صلاتك؟ ممكن متنساش 🙏 ؟';
-  static const String fallbackBody = 'متخسرش عدد الايام و خليك مكمل 👏';
+  static const String fallbackTitle = 'هل سجّلت صلاتك؟ 🙏';
+  static const String fallbackBody = 'حافظ على تتابع أيامك 👏';
 
   static const int _testId = 999;
   static const int _periodicId = 1001;
@@ -251,7 +251,7 @@ class ReminderService extends ChangeNotifier {
       await _plugin.show(
         _testId,
         'التذكير شغال ✅',
-        'لو شايف الرسالة دي، الإشعارات مظبوطة',
+        'الإشعارات تعمل بشكل صحيح',
         _details(),
       );
       _scheduleError = null;

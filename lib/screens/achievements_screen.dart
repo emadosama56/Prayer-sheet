@@ -29,7 +29,7 @@ class AchievementsScreen extends StatelessWidget {
         children: <Widget>[
           _CurrentMosaic(progress: progress),
           const SizedBox(height: 24),
-          _Heading('الأشكال اللي جمعتها (${progress.finishedCount})'),
+          _Heading('الأشكال المكتملة (${progress.finishedCount})'),
           const SizedBox(height: 10),
           _FinishedMosaics(progress: progress),
           const SizedBox(height: 24),
@@ -41,7 +41,7 @@ class AchievementsScreen extends StatelessWidget {
           ],
           const SizedBox(height: 8),
           Text(
-            'كل يوم تسجّل فيه الخمس صلوات = قطعة جديدة.',
+            'كل يوم كامل يمنحك قطعة',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodySmall,
           ),
@@ -98,8 +98,8 @@ class _CurrentMosaic extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             progress.piecesInCurrent == 0
-                ? 'سجّل الخمس صلوات النهاردة وخد أول قطعة'
-                : 'باقي ${progress.piecesLeft} أيام كاملة وتخلّص الشكل',
+                ? 'سجّل صلوات اليوم لتنال أول قطعة'
+                : 'بقيت ${progress.piecesLeft} أيام كاملة لإتمام الشكل',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w600,
@@ -129,8 +129,8 @@ class _FinishedMosaics extends StatelessWidget {
           border: Border.all(color: scheme.outlineVariant),
         ),
         child: Text(
-          'لسه مفيش شكل مكتمل — أول واحد على بعد '
-          '${progress.piecesLeft} أيام.',
+          'لا يوجد شكل مكتمل بعد — الأول على بُعد '
+          '${progress.piecesLeft} أيام',
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium,
         ),

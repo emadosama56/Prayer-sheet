@@ -115,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             FilledButton.icon(
               onPressed: () => store.markAll(_today),
               icon: const Icon(Icons.done_all),
-              label: const Text('تسجيل كل صلوات اليوم'),
+              label: const Text('تسجيل صلوات اليوم كلها'),
             ),
           const SizedBox(height: 16),
           _MosaicCard(completeDays: store.completeDays),
@@ -177,7 +177,7 @@ class _ExcusedCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        'مش قادرة أصلي النهاردة',
+                        'لا أستطيع الصلاة اليوم',
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: on ? kExcusedColor : null,
@@ -186,8 +186,8 @@ class _ExcusedCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         on
-                            ? 'اليوم محسوب ليكي وسلسلتك مكمّلة 🤍'
-                            : 'اليوم كله هيتحسب ومش هتخسري السلسلة',
+                            ? 'اليوم محتسب والسلسلة متصلة 🤍'
+                            : 'يُحتسب اليوم كاملًا وتبقى السلسلة متصلة',
                         style: theme.textTheme.bodySmall,
                       ),
                     ],
@@ -254,8 +254,8 @@ class _MosaicCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         progress.piecesInCurrent == 0
-                            ? 'كمّل صلوات النهاردة وخد أول قطعة'
-                            : 'باقي ${progress.piecesLeft} أيام كاملة',
+                            ? 'أكمل صلوات اليوم لتنال أول قطعة'
+                            : 'بقيت ${progress.piecesLeft} أيام كاملة',
                         style: theme.textTheme.bodySmall,
                       ),
                       const SizedBox(height: 8),

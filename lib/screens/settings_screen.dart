@@ -41,9 +41,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onChanged: (Gender? value) =>
                       value == null ? null : store.setGender(value),
                   title: Text(gender.arabicName),
-                  subtitle: gender.canExcuseDays
-                      ? const Text('هيظهرلك خيار «مش قادرة أصلي النهاردة»')
-                      : null,
                 ),
             ],
           ),
@@ -56,9 +53,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: const Text('تشغيل التذكير'),
                 subtitle: Text(
                   reminders.isSupported
-                      ? 'إشعارات تفكرك تسجّل صلاتك'
-                      : 'مقدرتش أشغّل الإشعارات: '
-                          '${reminders.setupError ?? "مش مدعومة هنا"}',
+                      ? 'إشعارات تذكّرك بتسجيل صلاتك'
+                      : 'تعذّر تشغيل الإشعارات: '
+                          '${reminders.setupError ?? "غير مدعومة"}',
                 ),
                 secondary: const Icon(Icons.notifications_outlined),
                 onChanged: reminders.isSupported
@@ -70,7 +67,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: reminders.isSoundOn,
                 title: const Text('صوت التذكير'),
                 subtitle: Text(
-                  reminders.isSoundOn ? 'هيرن بصوت خفيف' : 'هيجي من غير صوت',
+                  reminders.isSoundOn ? 'ينبّه بصوت خفيف' : 'يصل بلا صوت',
                 ),
                 secondary: Icon(
                   reminders.isSoundOn
@@ -85,7 +82,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               SwitchListTile(
                 value: reminders.quietHoursEnabled,
                 title: const Text('السكوت بالليل'),
-                subtitle: const Text('مفيش إشعارات من ١١ بالليل لـ ٦ الصبح'),
+                subtitle: const Text('لا إشعارات من ١١ مساءً حتى ٦ صباحًا'),
                 secondary: const Icon(Icons.bedtime_outlined),
                 onChanged: isOn
                     ? (bool v) =>
@@ -101,10 +98,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               RadioListTile<ReminderMode>(
                 value: ReminderMode.smart,
                 groupValue: reminders.mode,
-                title: const Text('ذكي (حسب مواعيد الصلاة)'),
+                title: const Text('ذكي — حسب مواعيد الصلاة'),
                 subtitle: const Text(
-                  'قبل كل صلاة بنص ساعة لو الى قبلها مش مسجلة، وبعد كل صلاة '
-                  'بنص ساعة لو لسه ما سجلتهاش. ولو سجّلت اليوم كله يسكت لبكرة.',
+                  'تذكير قبل كل صلاة بنصف ساعة إن لم تُسجَّل التي قبلها، '
+                  'وبعدها بنصف ساعة إن لم تُسجَّل. ويتوقف إذا اكتمل اليوم.',
                 ),
                 onChanged:
                     isOn ? (ReminderMode? m) => _setMode(reminders, m) : null,
@@ -114,7 +111,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: ReminderMode.everyTwoHours,
                 groupValue: reminders.mode,
                 title: const Text('كل ساعتين'),
-                subtitle: const Text('تذكير ثابت من غير مواعيد ولا موقع'),
+                subtitle: const Text('تذكير ثابت دون مواعيد أو موقع'),
                 onChanged:
                     isOn ? (ReminderMode? m) => _setMode(reminders, m) : null,
               ),
@@ -126,9 +123,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: <Widget>[
               ListTile(
                 leading: const Icon(Icons.notifications_active_outlined),
-                title: const Text('جرّب الإشعار دلوقتي'),
+                title: const Text('إرسال إشعار تجريبي'),
                 subtitle: const Text(
-                  'لو وصل، يبقى الإعداد سليم والمشكلة في المواعيد مش في الإذن',
+                  'وصوله يعني أن الإعداد سليم',
                 ),
                 trailing: const Icon(Icons.send_outlined),
                 onTap: !reminders.isSupported
@@ -140,8 +137,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           SnackBar(
                             content: Text(
                               sent
-                                  ? 'بعته — لو مجاش، الموبايل هو اللي بيمنعه'
-                                  : 'مقدرتش أبعته: ${reminders.scheduleError ?? ''}',
+                                  ? 'أُرسل. إن لم يصل فالجهاز يمنعه'
+                                  : 'تعذّر الإرسال: ${reminders.scheduleError ?? ''}',
                             ),
                           ),
                         );
@@ -154,8 +151,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: Text(
                   reminders.scheduleError ??
                       (reminders.pendingCount == 0
-                          ? 'صفر يعني مفيش حاجة متجدولة — شغّل التذكير أو دوس تحديث'
-                          : 'دي اللي النظام ماسكها ليك'),
+                          ? 'لم يُجدول شيء بعد'
+                          : 'محفوظة لدى النظام'),
                   style: reminders.scheduleError != null
                       ? TextStyle(color: theme.colorScheme.error)
                       : null,
@@ -175,9 +172,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: <Widget>[
                 ListTile(
                   leading: const Icon(Icons.place_outlined),
-                  title: Text(reminders.place?.label ?? 'لسه ما اتحددش'),
+                  title: Text(reminders.place?.label ?? 'لم يُحدَّد بعد'),
                   subtitle: const Text(
-                    'مواعيد الصلاة بتتحسب على الجهاز حسب المكان ده',
+                    'تُحسب مواعيد الصلاة على الجهاز وفق هذا الموقع',
                   ),
                   trailing: _isLocating
                       ? const SizedBox(
@@ -194,10 +191,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              'بيجرب الـ GPS الأول، ولو مرفوض بيحدد المدينة من الإنترنت.',
-              style: theme.textTheme.bodySmall,
-            ),
           ],
         ],
       ),
@@ -220,8 +213,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       SnackBar(
         content: Text(
           place.isDefault
-              ? 'مقدرتش أحدد الموقع — بستخدم القاهرة مؤقتاً'
-              : 'الموقع اتحدث: ${place.label}',
+              ? 'تعذّر تحديد الموقع، والمستخدم حاليًا القاهرة'
+              : 'تم تحديد الموقع: ${place.label}',
         ),
       ),
     );
@@ -237,10 +230,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final String message;
     if (result) {
-      message = 'التذكير اشتغل 🙏';
+      message = 'تم تشغيل التذكير';
     } else if (wanted) {
       // Asked for it, but the OS permission was refused.
-      message = 'التذكير محتاج إذن الإشعارات من إعدادات الموبايل';
+      message = 'التذكير يحتاج إذن الإشعارات';
     } else {
       message = 'تم إيقاف التذكير';
     }
@@ -305,9 +298,9 @@ class _AccountCard extends StatelessWidget {
         children: <Widget>[
           ListTile(
             leading: const Icon(Icons.cloud_off_outlined),
-            title: const Text('الحفظ على حسابك مش متاح'),
+            title: const Text('الحفظ في الحساب غير متاح'),
             subtitle: Text(
-              'سجلك محفوظ على الموبايل وبيترجع لو نزّلت التطبيق تاني.',
+              'سجلك محفوظ على الجهاز',
               style: theme.textTheme.bodySmall,
             ),
           ),
@@ -322,7 +315,7 @@ class _AccountCard extends StatelessWidget {
             leading: Icon(Icons.account_circle_outlined),
             title: Text('تسجيل الدخول بحساب جوجل'),
             subtitle: Text(
-              'سجلك يتحفظ على حسابك ويرجع على أي موبايل تدخل منه',
+              'يُحفظ سجلك في حسابك ويعود على أي جهاز',
             ),
           ),
           Padding(
@@ -337,7 +330,7 @@ class _AccountCard extends StatelessWidget {
                         messenger.showSnackBar(
                           SnackBar(
                             content:
-                                Text('مقدرتش أسجّل دخولك: ${account.error}'),
+                                Text('تعذّر تسجيل الدخول: ${account.error}'),
                           ),
                         );
                       }
@@ -349,7 +342,7 @@ class _AccountCard extends StatelessWidget {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.login),
-              label: Text(account.isBusy ? 'جاري الدخول…' : 'دخول بجوجل'),
+              label: Text(account.isBusy ? 'جارٍ الدخول…' : 'الدخول بحساب جوجل'),
             ),
           ),
         ],
@@ -376,11 +369,11 @@ class _AccountCard extends StatelessWidget {
           leading: const Icon(Icons.cloud_done_outlined),
           title: Text(
             account.lastSyncedAt == null
-                ? 'لسه ما زامنش'
+                ? 'لم تتم المزامنة بعد'
                 : 'آخر حفظ ${DateFormat.jm('ar').format(account.lastSyncedAt!)}',
           ),
           subtitle: account.error == null
-              ? const Text('سجلك بيتحفظ على حسابك تلقائي')
+              ? const Text('يُحفظ سجلك تلقائيًا')
               : Text(
                   account.error!,
                   style: TextStyle(color: scheme.error),
@@ -394,7 +387,7 @@ class _AccountCard extends StatelessWidget {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : IconButton(
-                  tooltip: 'زامن دلوقتي',
+                  tooltip: 'مزامنة الآن',
                   icon: const Icon(Icons.sync),
                   onPressed: () => account.sync(store),
                 ),

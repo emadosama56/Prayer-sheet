@@ -93,7 +93,7 @@ class ReminderSchedule {
             id: _idFor(offset, index, ReminderKind.afterPrayer),
             at: prayerTime.add(followUpDelay),
             title: 'دخل وقت ${prayer.arabicName}',
-            body: 'متنساش تسجلها في التطبيق 🙏',
+            body: 'لا تنسَ تسجيلها 🙏',
           );
         }
 
@@ -110,9 +110,9 @@ class ReminderSchedule {
             now: now,
             id: _idFor(offset, index, ReminderKind.beforePrayer),
             at: prayerTime.subtract(leadTime),
-            title: 'لسه ما سجلتش ${previousPrayer.arabicName}',
+            title: 'لم تُسجَّل صلاة ${previousPrayer.arabicName} بعد',
             body:
-                '${prayer.arabicName} قرب يدخل — متخسرش عدد الايام و خليك مكمل 👏',
+                '${prayer.arabicName} قرب يدخل — حافظ على تتابع أيامك 👏',
           );
         }
       }

@@ -91,8 +91,8 @@ void main() {
 
     final args = platform.callTo('periodicallyShowWithDuration')!.arguments
         as Map<dynamic, dynamic>;
-    expect(args['title'], 'سجلت صلاتك؟ ممكن متنساش 🙏 ؟');
-    expect(args['body'], 'متخسرش عدد الايام و خليك مكمل 👏');
+    expect(args['title'], 'هل سجّلت صلاتك؟ 🙏');
+    expect(args['body'], 'حافظ على تتابع أيامك 👏');
   });
 
   test('the reminder uses the app sound, not the system default', () async {

@@ -54,7 +54,7 @@ void main() {
 
     final dhuhr = reminders.firstWhere((r) => r.title.contains('الظهر'));
     expect(dhuhr.at, DateTime(2026, 9, 11, 12, 23)); // 11:53 + 30m
-    expect(dhuhr.body, contains('متنساش تسجلها'));
+    expect(dhuhr.body, contains('لا تنسَ تسجيلها'));
   });
 
   test('a prayer warns half an hour ahead when the previous is unlogged', () {
@@ -64,16 +64,16 @@ void main() {
     final warning = reminders.firstWhere(
       (r) => r.at == DateTime(2026, 9, 11, 14, 52),
     );
-    expect(warning.title, 'لسه ما سجلتش الظهر');
+    expect(warning.title, 'لم تُسجَّل صلاة الظهر بعد');
     expect(warning.body, contains('العصر'));
-    expect(warning.body, contains('متخسرش عدد الايام'));
+    expect(warning.body, contains('حافظ على تتابع أيامك'));
   });
 
   test('logging a prayer drops its warning from the next one', () {
     final now = DateTime(2026, 9, 11, 12, 30);
 
     final before = build(now: now);
-    expect(before.any((r) => r.title == 'لسه ما سجلتش الظهر'), isTrue);
+    expect(before.any((r) => r.title == 'لم تُسجَّل صلاة الظهر بعد'), isTrue);
 
     final after = build(
       now: now,
@@ -81,7 +81,7 @@ void main() {
         today: <Prayer>{Prayer.dhuhr},
       },
     );
-    expect(after.any((r) => r.title == 'لسه ما سجلتش الظهر'), isFalse);
+    expect(after.any((r) => r.title == 'لم تُسجَّل صلاة الظهر بعد'), isFalse);
     // Its own follow-up is gone too, since it is logged.
     expect(after.any((r) => r.title == 'دخل وقت الظهر'), isFalse);
   });
@@ -119,7 +119,7 @@ void main() {
       timingsFor: timingsOn,
     );
     expect(
-      withIshaLogged.any((r) => r.title == 'لسه ما سجلتش العشاء'),
+      withIshaLogged.any((r) => r.title == 'لم تُسجَّل صلاة العشاء بعد'),
       isFalse,
     );
 
@@ -129,7 +129,7 @@ void main() {
       timingsFor: timingsOn,
     );
     final warning = withoutIsha.firstWhere(
-      (r) => r.title == 'لسه ما سجلتش العشاء',
+      (r) => r.title == 'لم تُسجَّل صلاة العشاء بعد',
     );
     expect(warning.at, DateTime(2026, 9, 11, 3, 39)); // 04:09 - 30m
   });

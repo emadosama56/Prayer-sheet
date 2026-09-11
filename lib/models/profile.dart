@@ -4,8 +4,8 @@
 /// exists: a woman has days she is not meant to pray, and the app should not
 /// count those against her.
 enum Gender {
-  male(id: 'male', arabicName: 'راجل'),
-  female(id: 'female', arabicName: 'ست');
+  male(id: 'male', arabicName: 'ذكر'),
+  female(id: 'female', arabicName: 'أنثى');
 
   const Gender({required this.id, required this.arabicName});
 

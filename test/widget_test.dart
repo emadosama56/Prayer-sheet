@@ -81,20 +81,20 @@ void main() {
   testWidgets('marking all completes the day', (WidgetTester tester) async {
     final store = await pumpApp(tester);
 
-    await tester.tap(find.text('تسجيل كل صلوات اليوم'));
+    await tester.tap(find.text('تسجيل صلوات اليوم كلها'));
     await tester.pumpAndSettle();
 
     expect(store.recordFor(DateTime.now()).isComplete, isTrue);
     expect(find.text('5/5'), findsOneWidget);
     // The shortcut hides itself once there is nothing left to mark.
-    expect(find.text('تسجيل كل صلوات اليوم'), findsNothing);
+    expect(find.text('تسجيل صلوات اليوم كلها'), findsNothing);
   });
 
   testWidgets('the excuse option is absent by default', (tester) async {
     final store = await pumpApp(tester);
 
     expect(store.gender, Gender.male);
-    expect(find.text('مش قادرة أصلي النهاردة'), findsNothing);
+    expect(find.text('لا أستطيع الصلاة اليوم'), findsNothing);
     // The prayers are still there to log, untouched.
     for (final prayer in Prayer.values) {
       expect(find.text(prayer.arabicName), findsWidgets);
@@ -107,7 +107,7 @@ void main() {
     await store.setGender(Gender.female);
     await tester.pumpAndSettle();
 
-    final excuse = find.text('مش قادرة أصلي النهاردة');
+    final excuse = find.text('لا أستطيع الصلاة اليوم');
     expect(excuse, findsOneWidget);
 
     await tester.tap(excuse);
@@ -130,7 +130,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.settings_outlined));
     await tester.pumpAndSettle();
 
-    expect(find.text('جرّب الإشعار دلوقتي'), findsOneWidget);
+    expect(find.text('إرسال إشعار تجريبي'), findsOneWidget);
     expect(find.textContaining('تذكيرات مجدولة'), findsOneWidget);
   });
 

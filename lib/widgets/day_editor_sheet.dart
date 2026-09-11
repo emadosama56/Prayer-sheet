@@ -132,7 +132,7 @@ class _ExcusedToggle extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        'مش قادرة أصلي النهاردة',
+                        'لا أستطيع الصلاة اليوم',
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: on ? kExcusedColor : null,
@@ -141,8 +141,8 @@ class _ExcusedToggle extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         on
-                            ? 'اليوم محسوب ليكي وسلسلتك مكمّلة'
-                            : 'اليوم كله هيتحسب ومش هتخسري السلسلة',
+                            ? 'اليوم محتسب والسلسلة متصلة'
+                            : 'يُحتسب اليوم كاملًا وتبقى السلسلة متصلة',
                         style: theme.textTheme.bodySmall,
                       ),
                     ],
