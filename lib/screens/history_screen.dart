@@ -201,8 +201,8 @@ class _HistoryRow extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: record.isComplete
                         ? scheme.primaryContainer

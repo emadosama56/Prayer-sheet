@@ -1,0 +1,36 @@
+# One-time: copies the first build, published before releases were numbered,
+# into a permanent v1 release. Nothing is deleted or moved. Delete this file
+# once it has run.
+name: Preserve the first build as v1
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  preserve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy the first build into a v1 release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view v1 >/dev/null 2>&1; then
+            echo "v1 already exists, nothing to do"
+            exit 0
+          fi
+          gh release download latest-apk --pattern 'prayer-sheet.apk' --dir .
+          # The rolling release moves with every build, so refuse to label a
+          # later build as v1: this is the checksum of the first one.
+          echo '48ec0468a087f529b10db822f807e5d78ada88366f7c9e0398c13de8dd2fd973  prayer-sheet.apk' | sha256sum -c -
+          mv prayer-sheet.apk prayer-sheet-v1.apk
+          SHA=$(gh release view latest-apk --json targetCommitish -q .targetCommitish)
+          gh release create v1 prayer-sheet-v1.apk \
+            --title v1 \
+            --target "$SHA" \
+            --notes 'أول نسخة من التطبيق (سجل الصلاة + سجل الأيام).'

@@ -11,6 +11,9 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // flutter_local_notifications schedules through java.time, so the
+        // library APIs must be desugared for older Android versions.
+        coreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -28,6 +31,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true
     }
 
     buildTypes {
@@ -41,4 +45,12 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.4"
+    // Guards against the Android 12L+ crash the notification plugin's readme
+    // documents as a side effect of enabling desugaring.
+    implementation "androidx.window:window:1.0.0"
+    implementation "androidx.window:window-java:1.0.0"
 }

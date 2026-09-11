@@ -4,15 +4,21 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:prayer_sheet/main.dart';
 import 'package:prayer_sheet/models/prayer.dart';
 import 'package:prayer_sheet/services/prayer_store.dart';
+import 'package:prayer_sheet/services/reminder_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'support/fake_notification_platform.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() => initializeDateFormatting('ar'));
 
+  late FakeNotificationPlatform notifications;
+
   setUp(() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
+    notifications = FakeNotificationPlatform()..install();
     // A tall phone-sized surface, so the whole home screen is laid out at
     // once instead of the ListView lazily skipping everything below 600px.
     final TestFlutterView view = TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
@@ -21,6 +27,7 @@ void main() {
   });
 
   tearDown(() {
+    notifications.remove();
     final TestFlutterView view = TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
     view.resetPhysicalSize();
     view.resetDevicePixelRatio();
@@ -29,7 +36,11 @@ void main() {
   Future<PrayerStore> pumpApp(WidgetTester tester) async {
     final store = PrayerStore();
     await store.load();
-    await tester.pumpWidget(PrayerSheetApp(store: store));
+    final reminders = ReminderService();
+    await reminders.init();
+    await tester.pumpWidget(
+      PrayerSheetApp(store: store, reminders: reminders),
+    );
     await tester.pumpAndSettle();
     return store;
   }
@@ -84,6 +95,35 @@ void main() {
     expect(find.text('سجل الأيام'), findsOneWidget);
     expect(find.text('لا يوجد سجل بعد'), findsNothing);
     expect(find.text('1/5'), findsOneWidget);
+  });
+
+  testWidgets('settings can turn the reminder and its sound on and off',
+      (WidgetTester tester) async {
+    await pumpApp(tester);
+
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('الإعدادات'), findsOneWidget);
+
+    final reminderSwitch = find.widgetWithText(SwitchListTile, 'تشغيل التذكير');
+    expect(tester.widget<SwitchListTile>(reminderSwitch).value, isFalse);
+
+    await tester.tap(reminderSwitch);
+    await tester.pumpAndSettle();
+    expect(tester.widget<SwitchListTile>(reminderSwitch).value, isTrue);
+    expect(notifications.hasCallTo('periodicallyShowWithDuration'), isTrue);
+
+    final soundSwitch = find.widgetWithText(SwitchListTile, 'صوت التذكير');
+    expect(tester.widget<SwitchListTile>(soundSwitch).value, isTrue);
+
+    await tester.tap(soundSwitch);
+    await tester.pumpAndSettle();
+    expect(tester.widget<SwitchListTile>(soundSwitch).value, isFalse);
+
+    await tester.tap(reminderSwitch);
+    await tester.pumpAndSettle();
+    expect(tester.widget<SwitchListTile>(reminderSwitch).value, isFalse);
+    expect(notifications.hasCallTo('cancel'), isTrue);
   });
 
   testWidgets('history screen is empty before anything is logged',

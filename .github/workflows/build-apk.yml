@@ -38,8 +38,13 @@ jobs:
         run: flutter build apk --release
 
       - name: Name the APK
+        id: apk
         run: |
+          # The build number in pubspec.yaml is the release number: 1.1.0+2 -> v2.
+          BUILD=$(grep -m1 '^version:' pubspec.yaml | sed -E 's/.*\+([0-9]+).*/\1/')
+          echo "version=v$BUILD" >> "$GITHUB_OUTPUT"
           mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/prayer-sheet-v$BUILD.apk"
           cp build/app/outputs/flutter-apk/app-release.apk dist/prayer-sheet.apk
           ls -lh dist
 
@@ -48,17 +53,32 @@ jobs:
           name: prayer-sheet-apk
           path: dist/prayer-sheet.apk
 
-      # A fixed tag, so the download link below never changes between builds.
-      - name: Publish to the rolling release
+      # Kept forever, so every build stays downloadable.
+      - name: Publish the numbered release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.apk.outputs.version }}
+          name: ${{ steps.apk.outputs.version }}
+          body: |
+            نسخة ${{ steps.apk.outputs.version }} من التطبيق.
+
+            التطبيق موقّع بمفتاح debug (للتجربة الشخصية)، فأندرويد هيسألك
+            تسمح بالتثبيت من مصدر غير معروف — وافق عادي.
+
+            Build: ${{ github.sha }}
+          files: dist/prayer-sheet-*.apk
+          fail_on_unmatched_files: true
+
+      # A fixed tag alongside the numbered ones, so the download link a phone
+      # has bookmarked always points at the newest build.
+      - name: Update the rolling release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest-apk
           name: أحدث نسخة APK
           body: |
-            نزّل `prayer-sheet.apk` وثبّته على الموبايل.
-
-            التطبيق موقّع بمفتاح debug (للتجربة الشخصية)، فأندرويد هيسألك
-            تسمح بالتثبيت من مصدر غير معروف — وافق عادي.
+            أحدث نسخة (${{ steps.apk.outputs.version }}).
+            النسخ السابقة كلها محفوظة في صفحة الـ releases.
 
             Build: ${{ github.sha }}
           files: dist/prayer-sheet.apk

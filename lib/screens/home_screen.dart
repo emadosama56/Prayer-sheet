@@ -7,6 +7,7 @@ import '../widgets/day_editor_sheet.dart';
 import '../widgets/prayer_tile.dart';
 import '../widgets/today_header.dart';
 import 'history_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -47,6 +48,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       appBar: AppBar(
         title: const Text('سجل الصلاة'),
         actions: <Widget>[
+          IconButton(
+            tooltip: 'الإعدادات',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (BuildContext context) => const SettingsScreen(),
+              ),
+            ),
+          ),
           IconButton(
             tooltip: 'سجل الأيام',
             icon: const Icon(Icons.history),
@@ -219,16 +229,16 @@ class _DayChip extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: fill,
-                border:
-                    isToday ? Border.all(color: scheme.primary, width: 2) : null,
+                border: isToday
+                    ? Border.all(color: scheme.primary, width: 2)
+                    : null,
               ),
               child: Text(
                 '${record.doneCount}',
                 style: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: ratio > 0.5
-                      ? scheme.onPrimary
-                      : scheme.onSurfaceVariant,
+                  color:
+                      ratio > 0.5 ? scheme.onPrimary : scheme.onSurfaceVariant,
                 ),
               ),
             ),
