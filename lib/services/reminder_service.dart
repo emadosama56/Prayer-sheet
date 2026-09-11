@@ -34,6 +34,7 @@ class ReminderService extends ChangeNotifier {
   static const String fallbackTitle = 'سجلت صلاتك؟ ممكن متنساش 🙏 ؟';
   static const String fallbackBody = 'متخسرش عدد الايام و خليك مكمل 👏';
 
+  static const int _testId = 999;
   static const int _periodicId = 1001;
   static const String _enabledKey = 'reminders_enabled_v1';
   static const String _soundKey = 'reminders_sound_v1';
@@ -67,6 +68,19 @@ class ReminderService extends ChangeNotifier {
 
   /// Why setup failed, when it did — worth showing rather than swallowing.
   String? get setupError => _setupError;
+
+  int _pendingCount = 0;
+  String? _scheduleError;
+
+  /// How many reminders the OS is actually holding.
+  ///
+  /// Worth showing: a silent phone with zero pending is a scheduling problem,
+  /// and one with reminders pending is the phone holding them back. Without
+  /// this the two look identical from the outside.
+  int get pendingCount => _pendingCount;
+
+  /// Why the last reschedule failed, if it did.
+  String? get scheduleError => _scheduleError;
 
   /// The place the prayer times are computed for, once known.
   ResolvedLocation? get place => _place;
@@ -227,8 +241,54 @@ class ReminderService extends ChangeNotifier {
   /// Called whenever anything they depend on changes — a prayer logged, a
   /// setting flipped, the app reopened — because a scheduled notification
   /// cannot make decisions of its own once it has been handed to the OS.
+  /// Shows a notification right now, to prove delivery works at all.
+  ///
+  /// Separates the two things that look the same from the outside: the phone
+  /// refusing to show notifications, and nothing having been scheduled.
+  Future<bool> sendTestNotification() async {
+    if (!_isSupported) return false;
+    try {
+      await _plugin.show(
+        _testId,
+        'التذكير شغال ✅',
+        'لو شايف الرسالة دي، الإشعارات مظبوطة',
+        _details(),
+      );
+      _scheduleError = null;
+      notifyListeners();
+      return true;
+    } catch (error) {
+      _scheduleError = '$error';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Asks the OS what it is still holding, so the count can be shown.
+  Future<void> refreshPendingCount() async {
+    if (!_isSupported) return;
+    try {
+      final pending = await _plugin.pendingNotificationRequests();
+      _pendingCount = pending.length;
+    } catch (error) {
+      _scheduleError = '$error';
+    }
+    notifyListeners();
+  }
+
   Future<void> reschedule(PrayerStore? store) async {
     if (!_isSupported) return;
+    try {
+      await _reschedule(store);
+      _scheduleError = null;
+    } catch (error) {
+      // Losing the schedule silently is what made this impossible to diagnose.
+      _scheduleError = '$error';
+    }
+    await refreshPendingCount();
+  }
+
+  Future<void> _reschedule(PrayerStore? store) async {
 
     await _cancelAll();
     if (!_isEnabled) return;

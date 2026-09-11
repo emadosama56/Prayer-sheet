@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:prayer_sheet/main.dart';
 import 'package:prayer_sheet/models/prayer.dart';
+import 'package:prayer_sheet/models/profile.dart';
 import 'package:prayer_sheet/services/account_service.dart';
 import 'package:prayer_sheet/services/prayer_store.dart';
 import 'package:prayer_sheet/services/reminder_service.dart';
@@ -63,7 +64,7 @@ void main() {
       (WidgetTester tester) async {
     await pumpApp(tester);
 
-    expect(find.text('تقبل الله من عمداوى و جانجوناااا'), findsOneWidget);
+    expect(find.text('تقبل الله من عمداوى و جنجوناااا'), findsOneWidget);
     expect(find.text('و جمعهم دايما مع بعض فى كل حاجة حلوة'), findsOneWidget);
   });
 
@@ -87,6 +88,37 @@ void main() {
     expect(find.text('5/5'), findsOneWidget);
     // The shortcut hides itself once there is nothing left to mark.
     expect(find.text('تسجيل كل صلوات اليوم'), findsNothing);
+  });
+
+  testWidgets('the excuse option is absent by default', (tester) async {
+    final store = await pumpApp(tester);
+
+    expect(store.gender, Gender.male);
+    expect(find.text('مش قادرة أصلي النهاردة'), findsNothing);
+    // The prayers are still there to log, untouched.
+    for (final prayer in Prayer.values) {
+      expect(find.text(prayer.arabicName), findsWidgets);
+    }
+  });
+
+  testWidgets('choosing female offers the excuse, and it keeps the day',
+      (tester) async {
+    final store = await pumpApp(tester);
+    await store.setGender(Gender.female);
+    await tester.pumpAndSettle();
+
+    final excuse = find.text('مش قادرة أصلي النهاردة');
+    expect(excuse, findsOneWidget);
+
+    await tester.tap(excuse);
+    await tester.pumpAndSettle();
+
+    final today = store.recordFor(DateTime.now());
+    expect(today.isExcused, isTrue);
+    expect(today.isComplete, isTrue);
+    // With the day excused there is nothing left to log, so the rows go.
+    expect(find.text(Prayer.fajr.arabicName), findsNothing);
+    expect(find.text('5/5'), findsOneWidget);
   });
 
   testWidgets('history screen shows logged days', (WidgetTester tester) async {

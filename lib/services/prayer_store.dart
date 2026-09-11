@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/day_record.dart';
 import '../models/prayer.dart';
+import '../models/profile.dart';
 
 /// Holds every tracked day and persists it to the device.
 ///
@@ -12,15 +13,20 @@ import '../models/prayer.dart';
 /// tracking is only a few kilobytes, so there is no need for a database.
 class PrayerStore extends ChangeNotifier {
   static const String _storageKey = 'prayer_records_v1';
+  static const String _genderKey = 'profile_gender_v1';
 
   final Map<String, DayRecord> _records = <String, DayRecord>{};
   SharedPreferences? _prefs;
   bool _isLoaded = false;
+  Gender _gender = Gender.male;
+
+  Gender get gender => _gender;
 
   bool get isLoaded => _isLoaded;
 
   Future<void> load() async {
     _prefs = await SharedPreferences.getInstance();
+    _gender = Gender.fromId(_prefs!.getString(_genderKey));
     final raw = _prefs!.getString(_storageKey);
     if (raw != null && raw.isNotEmpty) {
       try {
@@ -37,6 +43,32 @@ class PrayerStore extends ChangeNotifier {
     }
     _isLoaded = true;
     notifyListeners();
+  }
+
+  Future<void> setGender(Gender gender) async {
+    if (_gender == gender) return;
+    _gender = gender;
+    notifyListeners();
+    await _prefs?.setString(_genderKey, gender.id);
+  }
+
+  /// Marks a whole day as one the user could not pray on, or clears it.
+  ///
+  /// The day then counts as kept, so a streak survives it, but it stays
+  /// distinguishable from a day of five prayers.
+  Future<void> setExcused(DateTime date, bool excused) async {
+    final key = dateKeyOf(date);
+    final record = (_records[key] ?? DayRecord(dateKey: key))
+        .withExcused(excused ? DateTime.now() : null);
+
+    if (record.isEmpty) {
+      _records.remove(key);
+    } else {
+      _records[key] = record;
+    }
+
+    notifyListeners();
+    await _persist();
   }
 
   /// The record for [date] — an empty one if the day was never touched.

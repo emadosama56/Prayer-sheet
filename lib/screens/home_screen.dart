@@ -6,6 +6,7 @@ import '../models/prayer.dart';
 import '../widgets/day_editor_sheet.dart';
 import '../widgets/prayer_tile.dart';
 import '../widgets/today_header.dart';
+import '../theme.dart';
 import '../models/mosaic.dart';
 import '../widgets/mosaic_grid.dart';
 import 'achievements_screen.dart';
@@ -95,15 +96,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             onDayTap: (DateTime date) => DayEditorSheet.show(context, date),
           ),
           const SizedBox(height: 20),
-          for (final prayer in Prayer.values) ...<Widget>[
-            PrayerTile(
-              prayer: prayer,
-              isDone: record.isDone(prayer),
-              markedAt: record.timeOf(prayer),
-              onTap: () => store.toggle(_today, prayer),
-            ),
-            const SizedBox(height: 10),
+          if (store.gender.canExcuseDays) ...<Widget>[
+            _ExcusedCard(date: _today, record: record),
+            const SizedBox(height: 14),
           ],
+          if (!record.isExcused)
+            for (final prayer in Prayer.values) ...<Widget>[
+              PrayerTile(
+                prayer: prayer,
+                isDone: record.isDone(prayer),
+                markedAt: record.timeOf(prayer),
+                onTap: () => store.toggle(_today, prayer),
+              ),
+              const SizedBox(height: 10),
+            ],
           const SizedBox(height: 8),
           if (!record.isComplete)
             FilledButton.icon(
@@ -126,6 +132,71 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           const SizedBox(height: 24),
           const _Dedication(),
         ],
+      ),
+    );
+  }
+}
+
+/// The day's "could not pray" switch, on the home screen itself.
+class _ExcusedCard extends StatelessWidget {
+  const _ExcusedCard({required this.date, required this.record});
+
+  final DateTime date;
+  final DayRecord record;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final store = PrayerScope.of(context);
+    final on = record.isExcused;
+
+    return Material(
+      color: on ? kExcusedColor.withOpacity(0.15) : theme.colorScheme.surface,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => store.setExcused(date, !on),
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: on ? kExcusedColor : theme.colorScheme.outlineVariant,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: <Widget>[
+                Icon(
+                  on ? Icons.check_circle : Icons.event_busy_outlined,
+                  color: on ? kExcusedColor : theme.colorScheme.outline,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        'مش قادرة أصلي النهاردة',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: on ? kExcusedColor : null,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        on
+                            ? 'اليوم محسوب ليكي وسلسلتك مكمّلة 🤍'
+                            : 'اليوم كله هيتحسب ومش هتخسري السلسلة',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -228,7 +299,7 @@ class _Dedication extends StatelessWidget {
         Icon(Icons.favorite, size: 16, color: scheme.primary.withOpacity(0.7)),
         const SizedBox(height: 10),
         Text(
-          'تقبل الله من عمداوى و جانجوناااا',
+          'تقبل الله من عمداوى و جنجوناااا',
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.w700,
@@ -327,7 +398,9 @@ class _DayChip extends StatelessWidget {
     final ratio = record.doneCount / Prayer.values.length;
 
     final Color fill;
-    if (record.isComplete) {
+    if (record.isExcused) {
+      fill = kExcusedColor;
+    } else if (record.isComplete) {
       fill = scheme.primary;
     } else if (record.doneCount == 0) {
       fill = scheme.surfaceContainerHighest;

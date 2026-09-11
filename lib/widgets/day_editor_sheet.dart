@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../main.dart';
 import '../models/day_record.dart';
 import '../models/prayer.dart';
+import '../theme.dart';
 import 'prayer_tile.dart';
 
 /// Bottom sheet for reviewing — and fixing — any day, past or present.
@@ -48,15 +49,20 @@ class DayEditorSheet extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 18),
-            for (final prayer in Prayer.values) ...<Widget>[
-              PrayerTile(
-                prayer: prayer,
-                isDone: record.isDone(prayer),
-                markedAt: record.timeOf(prayer),
-                onTap: () => store.toggle(date, prayer),
-              ),
-              const SizedBox(height: 10),
+            if (store.gender.canExcuseDays) ...<Widget>[
+              _ExcusedToggle(date: date, record: record),
+              const SizedBox(height: 12),
             ],
+            if (!record.isExcused)
+              for (final prayer in Prayer.values) ...<Widget>[
+                PrayerTile(
+                  prayer: prayer,
+                  isDone: record.isDone(prayer),
+                  markedAt: record.timeOf(prayer),
+                  onTap: () => store.toggle(date, prayer),
+                ),
+                const SizedBox(height: 10),
+              ],
             const SizedBox(height: 6),
             Row(
               children: <Widget>[
@@ -80,6 +86,71 @@ class DayEditorSheet extends StatelessWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Marks a whole day as one the user could not pray on.
+class _ExcusedToggle extends StatelessWidget {
+  const _ExcusedToggle({required this.date, required this.record});
+
+  final DateTime date;
+  final DayRecord record;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final store = PrayerScope.of(context);
+    final on = record.isExcused;
+
+    return Material(
+      color: on ? kExcusedColor.withOpacity(0.15) : theme.colorScheme.surface,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => store.setExcused(date, !on),
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: on ? kExcusedColor : theme.colorScheme.outlineVariant,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: <Widget>[
+                Icon(
+                  on ? Icons.check_circle : Icons.event_busy_outlined,
+                  color: on ? kExcusedColor : theme.colorScheme.outline,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        'مش قادرة أصلي النهاردة',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: on ? kExcusedColor : null,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        on
+                            ? 'اليوم محسوب ليكي وسلسلتك مكمّلة'
+                            : 'اليوم كله هيتحسب ومش هتخسري السلسلة',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
 import '../main.dart';
+import '../models/profile.dart';
 import '../services/reminder_service.dart';
 
 /// Everything the user can turn on and off.
@@ -29,6 +30,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: <Widget>[
           const _Heading('حسابك'),
           const _AccountCard(),
+          const SizedBox(height: 20),
+          const _Heading('أنت'),
+          _Card(
+            children: <Widget>[
+              for (final gender in Gender.values)
+                RadioListTile<Gender>(
+                  value: gender,
+                  groupValue: store.gender,
+                  onChanged: (Gender? value) =>
+                      value == null ? null : store.setGender(value),
+                  title: Text(gender.arabicName),
+                  subtitle: gender.canExcuseDays
+                      ? const Text('هيظهرلك خيار «مش قادرة أصلي النهاردة»')
+                      : null,
+                ),
+            ],
+          ),
           const SizedBox(height: 20),
           const _Heading('التذكير'),
           _Card(

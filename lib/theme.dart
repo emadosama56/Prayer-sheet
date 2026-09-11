@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 const Color kSeedColor = Color(0xFF14795A);
 const Color kAccentColor = Color(0xFFD4A017);
 
+/// Days marked as ones the user could not pray on. Deliberately not the green
+/// a prayed day gets: the day counts, but it is not the same thing.
+const Color kExcusedColor = Color(0xFF9B5FA8);
+
 ThemeData buildTheme(Brightness brightness) {
   final scheme = ColorScheme.fromSeed(
     seedColor: kSeedColor,

@@ -7,6 +7,7 @@ import '../models/prayer.dart';
 import '../services/prayer_store.dart';
 import '../widgets/day_dots.dart';
 import '../widgets/day_editor_sheet.dart';
+import '../theme.dart';
 
 /// Every day that has at least one logged prayer, newest first.
 class HistoryScreen extends StatelessWidget {
@@ -204,19 +205,23 @@ class _HistoryRow extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: record.isComplete
-                        ? scheme.primaryContainer
-                        : scheme.surfaceContainerHighest,
+                    color: record.isExcused
+                        ? kExcusedColor.withOpacity(0.18)
+                        : record.isComplete
+                            ? scheme.primaryContainer
+                            : scheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    '${record.doneCount}/$total',
+                    record.isExcused ? 'عذر' : '${record.doneCount}/$total',
                     textDirection: TextDirection.ltr,
                     style: theme.textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: record.isComplete
-                          ? scheme.onPrimaryContainer
-                          : scheme.onSurfaceVariant,
+                      color: record.isExcused
+                          ? kExcusedColor
+                          : record.isComplete
+                              ? scheme.onPrimaryContainer
+                              : scheme.onSurfaceVariant,
                     ),
                   ),
                 ),

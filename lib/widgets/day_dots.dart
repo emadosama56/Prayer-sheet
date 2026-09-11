@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/day_record.dart';
 import '../models/prayer.dart';
+import '../theme.dart';
 
 /// Five small dots summarising which prayers of a day were logged.
 class DayDots extends StatelessWidget {
@@ -24,9 +25,11 @@ class DayDots extends StatelessWidget {
               height: size,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: record.isDone(prayer)
-                    ? scheme.primary
-                    : scheme.outlineVariant,
+                color: record.isExcused
+                    ? kExcusedColor
+                    : record.isDone(prayer)
+                        ? scheme.primary
+                        : scheme.outlineVariant,
               ),
             ),
           ),

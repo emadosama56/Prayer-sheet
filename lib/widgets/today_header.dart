@@ -68,9 +68,11 @@ class TodayHeader extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            record.isComplete
-                ? 'ما شاء الله، اكتملت صلوات اليوم 🤍'
-                : 'باقي ${record.missedCount} من ${Prayer.values.length} صلوات',
+            record.isExcused
+                ? 'اليوم محسوب ليكي 🤍'
+                : record.isComplete
+                    ? 'ما شاء الله، اكتملت صلوات اليوم 🤍'
+                    : 'باقي ${record.missedCount} من ${Prayer.values.length} صلوات',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: scheme.onPrimary,
               fontWeight: FontWeight.w600,
