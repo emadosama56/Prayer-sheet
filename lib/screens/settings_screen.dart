@@ -120,6 +120,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 20),
+          const _Heading('فحص الإشعارات'),
+          _Card(
+            children: <Widget>[
+              ListTile(
+                leading: const Icon(Icons.notifications_active_outlined),
+                title: const Text('جرّب الإشعار دلوقتي'),
+                subtitle: const Text(
+                  'لو وصل، يبقى الإعداد سليم والمشكلة في المواعيد مش في الإذن',
+                ),
+                trailing: const Icon(Icons.send_outlined),
+                onTap: !reminders.isSupported
+                    ? null
+                    : () async {
+                        final messenger = ScaffoldMessenger.of(context);
+                        final sent = await reminders.sendTestNotification();
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              sent
+                                  ? 'بعته — لو مجاش، الموبايل هو اللي بيمنعه'
+                                  : 'مقدرتش أبعته: ${reminders.scheduleError ?? ''}',
+                            ),
+                          ),
+                        );
+                      },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.pending_actions_outlined),
+                title: Text('تذكيرات مجدولة: ${reminders.pendingCount}'),
+                subtitle: Text(
+                  reminders.scheduleError ??
+                      (reminders.pendingCount == 0
+                          ? 'صفر يعني مفيش حاجة متجدولة — شغّل التذكير أو دوس تحديث'
+                          : 'دي اللي النظام ماسكها ليك'),
+                  style: reminders.scheduleError != null
+                      ? TextStyle(color: theme.colorScheme.error)
+                      : null,
+                ),
+                trailing: IconButton(
+                  tooltip: 'تحديث',
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () => reminders.reschedule(store),
+                ),
+              ),
+            ],
+          ),
           if (reminders.mode == ReminderMode.smart) ...<Widget>[
             const SizedBox(height: 20),
             const _Heading('الموقع'),

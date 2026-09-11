@@ -121,6 +121,19 @@ void main() {
     expect(find.text('5/5'), findsOneWidget);
   });
 
+  testWidgets('settings carries the notification check', (tester) async {
+    // This exists because the controls were once edited in and silently did
+    // not land: analyze passed, nothing was added, and the APK shipped
+    // without them. Asserting they are on screen is what catches that.
+    await pumpApp(tester);
+
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.text('جرّب الإشعار دلوقتي'), findsOneWidget);
+    expect(find.textContaining('تذكيرات مجدولة'), findsOneWidget);
+  });
+
   testWidgets('history screen shows logged days', (WidgetTester tester) async {
     final store = await pumpApp(tester);
     await store.toggle(DateTime.now(), Prayer.fajr);
