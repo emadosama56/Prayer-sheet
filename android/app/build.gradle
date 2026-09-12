@@ -21,7 +21,9 @@ android {
     }
 
     namespace = "com.emadosama.prayer_sheet"
-    compileSdk = flutter.compileSdkVersion
+    // androidx.work, pulled in by home_widget, refuses to be compiled
+    // against anything older than 35.
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

@@ -2,15 +2,10 @@
 # nothing here can affect the APK.
 name: Build IPA
 
+# Run by hand only: iOS is parked, so it should not spend build time or
+# report failures while Android is the one being worked on. The setup stays in
+# the repository, ready for when it is picked back up.
 on:
-  push:
-    branches: [claude/flutter-prayer-tracker-app-lphdde, main]
-    paths:
-      - 'lib/**'
-      - 'ios/**'
-      - 'pubspec.yaml'
-      - 'tool/ios_google_url_scheme.py'
-      - '.github/workflows/build-ipa.yml'
   workflow_dispatch:
 
 permissions:
