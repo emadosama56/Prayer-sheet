@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The app's own green, so the widget is recognisably part of it. -->
+    <color name="widget_surface">#F6F7F4</color>
+    <color name="widget_pill">#FFFFFF</color>
+    <color name="widget_outline">#C9D3CD</color>
+    <color name="widget_done">#14795A</color>
+    <color name="widget_text">#1B1C1B</color>
+    <color name="widget_text_done">#FFFFFF</color>
+    <color name="widget_muted">#5F6B65</color>
+</resources>

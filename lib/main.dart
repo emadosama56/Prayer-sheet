@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'screens/home_screen.dart';
 import 'services/account_service.dart';
 import 'services/prayer_store.dart';
+import 'services/prayer_widget.dart';
 import 'services/reminder_service.dart';
 import 'theme.dart';
 
@@ -19,6 +21,10 @@ Future<void> main() async {
 
   final reminders = ReminderService();
   await reminders.init();
+
+  // Tapping a prayer on the home screen runs this with the app closed.
+  await HomeWidget.registerInteractivityCallback(onWidgetTapped);
+  await PrayerWidget.update(store);
 
   final account = AccountService();
   runApp(
@@ -55,6 +61,7 @@ class _PrayerSheetAppState extends State<PrayerSheetApp> {
     // whole schedule is rebuilt whenever the log does.
     widget.store.addListener(_rescheduleReminders);
     widget.store.addListener(_syncAccount);
+    widget.store.addListener(_refreshWidget);
     _rescheduleReminders();
   }
 
@@ -62,7 +69,18 @@ class _PrayerSheetAppState extends State<PrayerSheetApp> {
   void dispose() {
     widget.store.removeListener(_rescheduleReminders);
     widget.store.removeListener(_syncAccount);
+    widget.store.removeListener(_refreshWidget);
     super.dispose();
+  }
+
+  /// Redraws the home screen widget whenever the log changes, so it never
+  /// shows a prayer as unlogged after it has been marked in the app.
+  void _refreshWidget() {
+    PrayerWidget.update(
+      widget.store,
+      latitude: widget.reminders.place?.latitude,
+      longitude: widget.reminders.place?.longitude,
+    );
   }
 
   /// Pushes a changed log up, when there is an account to push it to.

@@ -96,6 +96,31 @@ jobs:
             echo "ok: $symbol"
           done
 
+      # The widget is native: no Dart test can tell whether its layout, its
+      # provider or its receiver actually shipped.
+      - name: Check the home screen widget shipped
+        run: |
+          set -euo pipefail
+          AAPT2=$(ls -d "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
+          "$AAPT2" dump resources dist/prayer-sheet.apk > /tmp/wres.txt
+          for name in layout/prayer_widget xml/prayer_widget_info drawable/widget_pill_done; do
+            grep -q "$name" /tmp/wres.txt || {
+              echo "::error::$name is missing from the APK"; exit 1; }
+            echo "ok: $name"
+          done
+          DEX=$(unzip -p dist/prayer-sheet.apk 'classes*.dex' | tr -c '[:print:]' '\n')
+          for symbol in PrayerWidgetProvider es/antonborri/home_widget; do
+            grep -qa "$symbol" <<< "$DEX" || {
+              echo "::error::$symbol is missing from the APK"; exit 1; }
+            echo "ok: $symbol"
+          done
+          if ! "$AAPT2" dump xmltree --file AndroidManifest.xml dist/prayer-sheet.apk \
+               | grep -q 'PrayerWidgetProvider'; then
+            echo "::error::the widget is not declared in the manifest"
+            exit 1
+          fi
+          echo "ok: widget declared in the manifest"
+
       - uses: actions/upload-artifact@v4
         with:
           name: prayer-sheet-apk
