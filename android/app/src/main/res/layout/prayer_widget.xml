@@ -33,7 +33,7 @@
             android:layout_height="wrap_content"
             android:textColor="@color/widget_done"
             android:textSize="14sp"
-            android:textStyle="bold"
+            android:textStyle="bold" />
     </LinearLayout>
 
     <TextView
