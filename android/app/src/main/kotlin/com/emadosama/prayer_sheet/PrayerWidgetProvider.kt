@@ -4,6 +4,7 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
+import android.view.View
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetBackgroundIntent
 import es.antonborri.home_widget.HomeWidgetProvider
@@ -33,6 +34,15 @@ class PrayerWidgetProvider : HomeWidgetProvider() {
             views.setTextViewText(
                 R.id.widget_date,
                 widgetData.getString("date", ""),
+            )
+
+            // Empty when there is no streak: a "0 days" badge would be a
+            // reproach rather than an encouragement.
+            val streak = widgetData.getString("streak", "").orEmpty()
+            views.setTextViewText(R.id.widget_streak, streak)
+            views.setViewVisibility(
+                R.id.widget_streak,
+                if (streak.isEmpty()) View.GONE else View.VISIBLE,
             )
 
             val current = widgetData.getString("current", "")

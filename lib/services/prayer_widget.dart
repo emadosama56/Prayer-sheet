@@ -36,6 +36,10 @@ class PrayerWidget {
         '${record.doneCount}/${Prayer.values.length}',
       );
       await HomeWidget.saveWidgetData<bool>('excused', record.isExcused);
+      await HomeWidget.saveWidgetData<String>(
+        'streak',
+        streakLabel(store.currentStreak(today: today)),
+      );
 
       for (final prayer in Prayer.values) {
         await HomeWidget.saveWidgetData<String>(
@@ -63,6 +67,18 @@ class PrayerWidget {
       // break logging a prayer.
       debugPrint('widget update failed: $error');
     }
+  }
+
+  /// The streak as it reads on the widget, or empty when there is none.
+  ///
+  /// Arabic counts nouns by how many there are, so a single form would read
+  /// as broken text for most values.
+  static String streakLabel(int days) {
+    if (days <= 0) return '';
+    if (days == 1) return '🔥 يوم';
+    if (days == 2) return '🔥 يومان';
+    if (days <= 10) return '🔥 $days أيام';
+    return '🔥 $days يومًا';
   }
 
   /// The prayer the current moment belongs to.
