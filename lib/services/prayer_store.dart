@@ -26,23 +26,58 @@ class PrayerStore extends ChangeNotifier {
 
   Future<void> load() async {
     _prefs = await SharedPreferences.getInstance();
-    _gender = Gender.fromId(_prefs!.getString(_genderKey));
-    final raw = _prefs!.getString(_storageKey);
-    if (raw != null && raw.isNotEmpty) {
-      try {
-        final decoded = jsonDecode(raw) as Map<String, dynamic>;
-        decoded.forEach((dateKey, value) {
-          if (value is! Map<String, dynamic>) return;
-          final record = DayRecord.fromJson(dateKey, value);
-          if (!record.isEmpty) _records[dateKey] = record;
-        });
-      } on FormatException {
-        // Unreadable data: start over rather than block the whole app.
-        _records.clear();
-      }
-    }
+    _read();
     _isLoaded = true;
     notifyListeners();
+  }
+
+  /// Re-reads the log from storage.
+  ///
+  /// The home screen widget logs prayers from a separate isolate, with its own
+  /// copy of everything, so what is in memory here goes stale the moment a
+  /// prayer is tapped outside the app.
+  Future<void> refresh() async {
+    final prefs = _prefs;
+    if (prefs == null) return load();
+    // The cache is per isolate: without this the other isolate's write is
+    // invisible no matter how often it is read.
+    await prefs.reload();
+    _read();
+    notifyListeners();
+  }
+
+  void _read() {
+    final prefs = _prefs;
+    if (prefs == null) return;
+
+    _gender = Gender.fromId(prefs.getString(_genderKey));
+    // Replace rather than merge, so a day deleted elsewhere stays deleted.
+    _records.clear();
+
+    final raw = prefs.getString(_storageKey);
+    if (raw == null || raw.isEmpty) return;
+    try {
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      decoded.forEach((dateKey, value) {
+        if (value is! Map<String, dynamic>) return;
+        final record = DayRecord.fromJson(dateKey, value);
+        if (!record.isEmpty) _records[dateKey] = record;
+      });
+    } on FormatException {
+      // Unreadable data: start over rather than block the whole app.
+      _records.clear();
+    }
+  }
+
+  /// Picks up another isolate's writes before this one overwrites them.
+  ///
+  /// Every change here rewrites the whole log, so without re-reading first a
+  /// prayer logged on the widget would be wiped by the next tap in the app.
+  Future<void> _syncBeforeWrite() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    await prefs.reload();
+    _read();
   }
 
   Future<void> setGender(Gender gender) async {
@@ -57,6 +92,7 @@ class PrayerStore extends ChangeNotifier {
   /// The day then counts as kept, so a streak survives it, but it stays
   /// distinguishable from a day of five prayers.
   Future<void> setExcused(DateTime date, bool excused) async {
+    await _syncBeforeWrite();
     final key = dateKeyOf(date);
     final record = (_records[key] ?? DayRecord(dateKey: key))
         .withExcused(excused ? DateTime.now() : null);
@@ -81,6 +117,7 @@ class PrayerStore extends ChangeNotifier {
 
   /// Marks [prayer] on [date] as prayed, or clears it if it already was.
   Future<void> toggle(DateTime date, Prayer prayer) async {
+    await _syncBeforeWrite();
     final key = dateKeyOf(date);
     final record = (_records[key] ?? DayRecord(dateKey: key)).copy();
 
@@ -102,6 +139,7 @@ class PrayerStore extends ChangeNotifier {
 
   /// Marks every remaining prayer of [date] as prayed.
   Future<void> markAll(DateTime date) async {
+    await _syncBeforeWrite();
     final key = dateKeyOf(date);
     final record = (_records[key] ?? DayRecord(dateKey: key)).copy();
     final now = DateTime.now();
@@ -114,6 +152,7 @@ class PrayerStore extends ChangeNotifier {
   }
 
   Future<void> clearDay(DateTime date) async {
+    await _syncBeforeWrite();
     if (_records.remove(dateKeyOf(date)) == null) return;
     notifyListeners();
     await _persist();

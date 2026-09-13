@@ -37,10 +37,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Reopening the app after midnight must roll the sheet over to the new day.
     if (state != AppLifecycleState.resumed) return;
+
+    // Reopening the app after midnight must roll the sheet over to the new day.
     final now = dayOnly(DateTime.now());
     if (now != _today) setState(() => _today = now);
+
+    // Prayers logged on the home screen widget were written by a different
+    // isolate, so nothing here knows about them until the log is read again.
+    PrayerScope.of(context).refresh();
   }
 
   @override
